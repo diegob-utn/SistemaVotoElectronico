@@ -91,7 +91,6 @@ namespace SistemaVoto.Api
             }
 
             // Swagger (si quieres que se vea en Render, pon ASPNETCORE_ENVIRONMENT=Development)
-            if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
