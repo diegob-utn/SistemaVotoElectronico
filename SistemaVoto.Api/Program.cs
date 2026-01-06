@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaVoto.Api.Data;
 using SistemaVoto.Api.Hubs;
 using SistemaVoto.Api.Services;
+using Microsoft.OpenApi.Models;
 
 namespace SistemaVoto.Api
 {
@@ -12,12 +13,12 @@ namespace SistemaVoto.Api
             var builder = WebApplication.CreateBuilder(args);
 
             // -----------------------------
-            // DB (PostgreSQL - Npgsql)
+            // DB (PostgreSQL - Render)
             // -----------------------------
             builder.Services.AddDbContext<SistemaVotoDbContext>(options =>
                 options.UseNpgsql(
                     builder.Configuration.GetConnectionString("DbContext.postgres-render")
-                    ?? throw new InvalidOperationException("Connection string 'DbContext.postgresql' not found.")
+                    ?? throw new InvalidOperationException("Connection string 'DbContext.postgres-render' not found.")
                 )
             );
 
@@ -26,7 +27,20 @@ namespace SistemaVoto.Api
             // -----------------------------
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "SistemaVoto API",
+                    Version = "v1"
+                });
+
+                // Evita choques de modelos con mismo nombre
+                c.CustomSchemaIds(t => t.FullName);
+
+                // Evita que Swagger reviente si hay rutas duplicadas (parche)
+                c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+            });
 
             // -----------------------------
             // SignalR + Services
@@ -44,8 +58,7 @@ namespace SistemaVoto.Api
                     p.WithOrigins(
                         "http://localhost:5500",
                         "http://127.0.0.1:5500"
-                    // Cuando hostees el dashboard, agrega aquí:
-                    // "https://tu-dashboard.vercel.app"
+                    // agrega aquí tu dominio del dashboard cuando lo subas
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod()
@@ -55,14 +68,10 @@ namespace SistemaVoto.Api
 
             var app = builder.Build();
 
-            // -----------------------------
-            // Health endpoint (Render)
-            // -----------------------------
+            // Health
             app.MapGet("/health", () => Results.Ok(new { ok = true, utc = DateTime.UtcNow }));
 
-            // -----------------------------
-            // Migraciones automáticas (Render)
-            // -----------------------------
+            // Migraciones automáticas
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -77,31 +86,25 @@ namespace SistemaVoto.Api
                 catch (Exception ex)
                 {
                     logger.LogError(ex, " Error aplicando migraciones automáticas.");
-                    // Si quieres que NO arranque si falla la migración, descomenta:
-                    // throw;
+                    // throw; // si quieres que no arranque si falla
                 }
             }
 
-            // -----------------------------
-            // Middleware order (importante)
-            // -----------------------------
-            //if (app.Environment.IsDevelopment())
+            // Swagger (si quieres que se vea en Render, pon ASPNETCORE_ENVIRONMENT=Development)
+            if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SistemaVoto API v1");
+                });
             }
 
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
             app.UseCors("AllowDashboard");
-
             app.UseAuthorization();
 
-            // -----------------------------
-            // Endpoints
-            // -----------------------------
             app.MapControllers();
             app.MapHub<VotacionHub>("/hubs/votacion");
 
