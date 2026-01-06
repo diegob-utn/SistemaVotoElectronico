@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SistemaVoto.Api/SistemaVoto.Api.csproj" />
+  <Project Path="SistemaVoto.Modelos/SistemaVoto.Modelos.csproj" />
+</Solution>
