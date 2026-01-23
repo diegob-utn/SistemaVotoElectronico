@@ -27,7 +27,6 @@ namespace SistemaVoto.Modelos
         public int NumEscanos { get; set; }        // 0 si Nominal, >0 si Plancha
         public EstadoEleccion Estado { get; set; } = EstadoEleccion.Pendiente;
 
-        // ✅ NUEVO: ubicación opcional
         public bool UsaUbicacion { get; set; } = false;
         public ModoUbicacion ModoUbicacion { get; set; } = ModoUbicacion.Ninguna;
 

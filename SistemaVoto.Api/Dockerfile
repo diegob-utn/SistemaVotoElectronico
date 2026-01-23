@@ -7,7 +7,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 COPY ["SistemaVoto.Api/SistemaVoto.Api.csproj", "SistemaVoto.Api/"]
-COPY ["SistemaVoto.Modelos/SistemaVoto.Modelos.csproj", "SistemaVoto.Modelos/"]
+#COPY ["../SistemaVoto.Modelos/SistemaVoto.Modelos.csproj", "SistemaVoto.Modelos/"]
 RUN dotnet restore "SistemaVoto.Api/SistemaVoto.Api.csproj"
 
 COPY . .

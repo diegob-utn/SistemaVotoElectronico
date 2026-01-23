@@ -9,7 +9,6 @@
         // Mantiene compatibilidad con tu firma actual
         public static ApiResult<T> Ok(T data) => Ok(data, null);
 
-        // ✅ NUEVO: mensaje opcional (arregla CS1501)
         public static ApiResult<T> Ok(T data, string? message)
         {
             return new ApiResult<T>
