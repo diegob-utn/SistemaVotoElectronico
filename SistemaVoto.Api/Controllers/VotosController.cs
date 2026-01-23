@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using SistemaVoto.Api.Data;
+using SistemaVoto.Api.Dtos;
 using SistemaVoto.Api.Hubs;
-using SistemaVoto.Api.Services;
 using SistemaVoto.Modelos;
 
 namespace SistemaVoto.Api.Controllers
@@ -14,104 +15,153 @@ namespace SistemaVoto.Api.Controllers
     public class VotosController : ControllerBase
     {
         private readonly SistemaVotoDbContext _db;
-        private readonly VoteHashService _hash;
         private readonly IHubContext<VotacionHub> _hub;
 
-        public VotosController(SistemaVotoDbContext db, VoteHashService hash, IHubContext<VotacionHub> hub)
+        public VotosController(SistemaVotoDbContext db, IHubContext<VotacionHub> hub)
         {
             _db = db;
-            _hash = hash;
             _hub = hub;
         }
 
-        public record VotarRequest(int UsuarioId, int? CandidatoId, int? ListaId);
-
+        // POST /api/elecciones/{eleccionId}/votar
         [HttpPost("votar")]
-        public async Task<IActionResult> Votar(int eleccionId, [FromBody] VotarRequest req)
+        public async Task<ActionResult<ApiResult<object>>> Votar(int eleccionId, [FromBody] VotarRequest req)
         {
-            var now = DateTime.UtcNow;
-
+            // 0) Elección existe
             var eleccion = await _db.Elecciones.FirstOrDefaultAsync(e => e.Id == eleccionId);
-            if (eleccion is null) return NotFound(ApiResult<object>.Fail("Elección no existe."));
+            if (eleccion is null)
+                return NotFound(ApiResult<object>.Fail("Elección no encontrada."));
 
-            if (eleccion.Estado != EstadoEleccion.Activa)
-                return BadRequest(ApiResult<object>.Fail("Elección no está activa."));
+            // 0.1) (opcional) validar estado/fechas si quieres bloquear fuera de rango:
+            // if (eleccion.Estado != EstadoEleccion.Activa) return BadRequest(ApiResult<object>.Fail("Elección no activa."));
 
-            if (now < eleccion.FechaInicioUtc || now > eleccion.FechaFinUtc)
-                return BadRequest(ApiResult<object>.Fail("Fuera de la ventana de votación."));
+            // 1) XOR: exactamente uno (CandidatoId o ListaId)
+            var hasCand = req.CandidatoId is not null;
+            var hasLista = req.ListaId is not null;
+            if (hasCand == hasLista)
+                return BadRequest(ApiResult<object>.Fail("Debes enviar exactamente uno: CandidatoId o ListaId."));
 
-            if (req.UsuarioId <= 0)
-                return BadRequest(ApiResult<object>.Fail("UsuarioId inválido."));
+            // 2) Validar según tipo de elección
+            if (eleccion.Tipo == TipoEleccion.Nominal && !hasCand)
+                return BadRequest(ApiResult<object>.Fail("Esta elección es Nominal: requiere CandidatoId."));
 
-            var ambosNull = req.CandidatoId is null && req.ListaId is null;
-            var ambosSet = req.CandidatoId is not null && req.ListaId is not null;
-            if (ambosNull || ambosSet)
-                return BadRequest(ApiResult<object>.Fail("Debe votar por candidato (nominal) o por lista (plancha), no ambos."));
+            if (eleccion.Tipo == TipoEleccion.Plancha && !hasLista)
+                return BadRequest(ApiResult<object>.Fail("Esta elección es Plancha: requiere ListaId."));
 
-            if (eleccion.Tipo == TipoEleccion.Nominal)
+            // 3) Anti doble voto (usuario solo 1 voto por elección)
+            var yaVoto = await _db.HistorialVotaciones
+                .AnyAsync(h => h.EleccionId == eleccionId && h.UsuarioId == req.UsuarioId);
+
+            if (yaVoto)
+                return BadRequest(ApiResult<object>.Fail("Este usuario ya votó en esta elección."));
+
+            // 4) Validar pertenencia de candidato/lista a la elección
+            if (req.CandidatoId is not null)
             {
-                if (req.CandidatoId is null) return BadRequest(ApiResult<object>.Fail("Elección nominal requiere CandidatoId."));
-
-                var candOk = await _db.Candidatos.AnyAsync(c => c.Id == req.CandidatoId && c.EleccionId == eleccionId);
-                if (!candOk) return BadRequest(ApiResult<object>.Fail("CandidatoId no pertenece a esta elección."));
+                var ok = await _db.Candidatos.AnyAsync(c => c.Id == req.CandidatoId && c.EleccionId == eleccionId);
+                if (!ok)
+                    return BadRequest(ApiResult<object>.Fail("CandidatoId no pertenece a esta elección."));
             }
-            else
+
+            if (req.ListaId is not null)
             {
-                if (req.ListaId is null) return BadRequest(ApiResult<object>.Fail("Elección plancha requiere ListaId."));
-
-                var listaOk = await _db.Listas.AnyAsync(l => l.Id == req.ListaId && l.EleccionId == eleccionId);
-                if (!listaOk) return BadRequest(ApiResult<object>.Fail("ListaId no pertenece a esta elección."));
+                var ok = await _db.Listas.AnyAsync(l => l.Id == req.ListaId && l.EleccionId == eleccionId);
+                if (!ok)
+                    return BadRequest(ApiResult<object>.Fail("ListaId no pertenece a esta elección."));
             }
 
-            await using var tx = await _db.Database.BeginTransactionAsync();
+            // 5) Ubicación opcional (solo exigir si la elección lo pide)
+            int? ubicacionId = null;
+            int? recintoId = null;
 
-            try
+            if (!eleccion.UsaUbicacion || eleccion.ModoUbicacion == ModoUbicacion.Ninguna)
             {
-                // PADRÓN (anti doble voto)
-                var hist = new HistorialVotacion
-                {
-                    EleccionId = eleccionId,
-                    UsuarioId = req.UsuarioId,
-                    FechaParticipacionUtc = now,
-                    HashTransaccion = _hash.HashTransaccion(eleccionId, req.UsuarioId, now)
-                };
-                _db.HistorialVotaciones.Add(hist);
-
-                // URNA (hash encadenado)
-                var lastHash = await _db.Votos
-                    .Where(v => v.EleccionId == eleccionId)
-                    .OrderByDescending(v => v.Id)
-                    .Select(v => v.HashActual)
-                    .FirstOrDefaultAsync() ?? "GENESIS";
-
-                var voto = new Voto
-                {
-                    EleccionId = eleccionId,
-                    CandidatoId = req.CandidatoId,
-                    ListaId = req.ListaId,
-                    FechaVotoUtc = now,
-                    HashPrevio = lastHash
-                };
-                voto.HashActual = _hash.HashVote(voto.HashPrevio, eleccionId, voto.CandidatoId, voto.ListaId, voto.FechaVotoUtc);
-
-                _db.Votos.Add(voto);
-
-                await _db.SaveChangesAsync();
-                await tx.CommitAsync();
-
-                await _hub.Clients.Group($"eleccion-{eleccionId}")
-                    .SendAsync("ActualizacionResultados", eleccionId);
-
-                return Ok(ApiResult<object>.Ok(new { ok = true }, "Voto registrado."));
+                // Ignorar si el cliente mandó algo
+                ubicacionId = null;
+                recintoId = null;
             }
-            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+            else if (eleccion.ModoUbicacion == ModoUbicacion.PorUbicacion)
             {
-                await tx.RollbackAsync();
-                return Conflict(ApiResult<object>.Fail("Ya votó en esta elección."));
+                if (req.UbicacionId is null)
+                    return BadRequest(ApiResult<object>.Fail("Esta elección requiere UbicacionId."));
+
+                var exists = await _db.Ubicaciones.AnyAsync(u => u.Id == req.UbicacionId);
+                if (!exists)
+                    return BadRequest(ApiResult<object>.Fail("UbicacionId no existe."));
+
+                // (opcional) si asignas ubicaciones permitidas a la elección, valida:
+                // var allowed = await _db.EleccionUbicaciones.AnyAsync(x => x.EleccionId == eleccionId && x.UbicacionId == req.UbicacionId);
+                // if (!allowed) return BadRequest(ApiResult<object>.Fail("UbicacionId no está habilitada para esta elección."));
+
+                ubicacionId = req.UbicacionId;
+                recintoId = null;
             }
+            else if (eleccion.ModoUbicacion == ModoUbicacion.PorRecinto)
+            {
+                if (req.RecintoId is null)
+                    return BadRequest(ApiResult<object>.Fail("Esta elección requiere RecintoId."));
+
+                var exists = await _db.Recintos.AnyAsync(r => r.Id == req.RecintoId);
+                if (!exists)
+                    return BadRequest(ApiResult<object>.Fail("RecintoId no existe."));
+
+                recintoId = req.RecintoId;
+                ubicacionId = null;
+            }
+
+            // 6) Hash chain (tamper-evident)
+            var lastHash = await _db.Votos
+                .Where(v => v.EleccionId == eleccionId)
+                .OrderByDescending(v => v.Id)
+                .Select(v => v.HashActual)
+                .FirstOrDefaultAsync();
+
+            var prevHash = lastHash ?? "GENESIS";
+            var nowUtc = DateTime.UtcNow;
+
+            var hashActual = ComputeSha256(
+                $"{prevHash}|{eleccionId}|{req.CandidatoId}|{req.ListaId}|{ubicacionId}|{recintoId}|{nowUtc:O}"
+            );
+
+            var voto = new Voto
+            {
+                EleccionId = eleccionId,
+                CandidatoId = req.CandidatoId,
+                ListaId = req.ListaId,
+                FechaVotoUtc = nowUtc,
+                HashPrevio = prevHash,
+                HashActual = hashActual,
+                UbicacionId = ubicacionId,
+                RecintoId = recintoId
+            };
+
+            var historial = new HistorialVotacion
+            {
+                EleccionId = eleccionId,
+                UsuarioId = req.UsuarioId,
+                FechaParticipacionUtc = nowUtc,
+                HashTransaccion = ComputeSha256($"TX|{eleccionId}|{req.UsuarioId}|{nowUtc:O}"),
+                UbicacionId = ubicacionId,
+                RecintoId = recintoId
+            };
+
+            _db.Votos.Add(voto);
+            _db.HistorialVotaciones.Add(historial);
+
+            await _db.SaveChangesAsync();
+
+            // 7) Notificar SOLO a los dashboards conectados a esa elección
+            await _hub.Clients.Group($"eleccion-{eleccionId}")
+                .SendAsync("ActualizacionResultados", eleccionId);
+
+            return Ok(ApiResult<object>.Ok(new { ok = true, votoId = voto.Id }));
         }
 
-        private static bool IsUniqueViolation(DbUpdateException ex)
-            => ex.InnerException is PostgresException pg && pg.SqlState == "23505";
+        private static string ComputeSha256(string input)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return Convert.ToHexString(bytes).ToLowerInvariant();
+        }
     }
 }

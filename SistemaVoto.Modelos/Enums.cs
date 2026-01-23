@@ -19,4 +19,10 @@ namespace SistemaVoto.Modelos
         Cerrada = 2,
         Cancelada = 3
     }
+    public enum ModoUbicacion
+    {
+        Ninguna = 0,      // Global / online
+        PorUbicacion = 1, // Por nodo del árbol (provincia/campus/facultad/etc)
+        PorRecinto = 2    // Por recinto electoral
+    }
 }

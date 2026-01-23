@@ -34,5 +34,11 @@ namespace SistemaVoto.Modelos
         // Tamper-evident chain
         public string HashPrevio { get; set; } = "GENESIS";
         public string HashActual { get; set; } = null!;
+
+        public int? UbicacionId { get; set; }
+        [JsonIgnore] public Ubicacion? Ubicacion { get; set; }
+
+        public int? RecintoId { get; set; }
+        [JsonIgnore] public RecintoElectoral? Recinto { get; set; }
     }
 }

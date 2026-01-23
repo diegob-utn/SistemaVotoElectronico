@@ -31,5 +31,13 @@ namespace SistemaVoto.Modelos
 
         // Hash único de la transacción (auditoría)
         public string? HashTransaccion { get; set; }
+
+
+
+        public int? UbicacionId { get; set; }
+        [JsonIgnore] public Ubicacion? Ubicacion { get; set; }
+
+        public int? RecintoId { get; set; }
+        [JsonIgnore] public RecintoElectoral? Recinto { get; set; }
     }
 }

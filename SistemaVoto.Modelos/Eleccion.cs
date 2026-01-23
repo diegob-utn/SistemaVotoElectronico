@@ -7,11 +7,11 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
+
 namespace SistemaVoto.Modelos
 {
     public class Eleccion
     {
-        [Key]
         public int Id { get; set; }
 
         [Required, StringLength(120)]
@@ -23,20 +23,21 @@ namespace SistemaVoto.Modelos
         public DateTime FechaInicioUtc { get; set; }
         public DateTime FechaFinUtc { get; set; }
 
-        public TipoEleccion Tipo { get; set; } = TipoEleccion.Nominal;
-
-        // Solo aplica a Plancha (para D’Hondt/Webster)
-        public int NumEscanos { get; set; } = 0;
-
+        public TipoEleccion Tipo { get; set; }     // 0 Nominal, 1 Plancha
+        public int NumEscanos { get; set; }        // 0 si Nominal, >0 si Plancha
         public EstadoEleccion Estado { get; set; } = EstadoEleccion.Pendiente;
 
-        public ICollection<Candidato> Candidatos { get; set; } = new List<Candidato>();
+        // ✅ NUEVO: ubicación opcional
+        public bool UsaUbicacion { get; set; } = false;
+        public ModoUbicacion ModoUbicacion { get; set; } = ModoUbicacion.Ninguna;
+
         public ICollection<Lista> Listas { get; set; } = new List<Lista>();
+        public ICollection<Candidato> Candidatos { get; set; } = new List<Candidato>();
 
         [JsonIgnore]
         public ICollection<Voto> Votos { get; set; } = new List<Voto>();
 
         [JsonIgnore]
-        public ICollection<HistorialVotacion> Historial { get; set; } = new List<HistorialVotacion>();
+        public ICollection<EleccionUbicacion> EleccionUbicaciones { get; set; } = new List<EleccionUbicacion>();
     }
 }

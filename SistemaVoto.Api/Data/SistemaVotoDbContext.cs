@@ -15,13 +15,18 @@ namespace SistemaVoto.Api.Data
         public DbSet<Voto> Votos => Set<Voto>();
         public DbSet<HistorialVotacion> HistorialVotaciones => Set<HistorialVotacion>();
 
+        //  NUEVO
+        public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
+        public DbSet<RecintoElectoral> Recintos => Set<RecintoElectoral>();
+        public DbSet<EleccionUbicacion> EleccionUbicaciones => Set<EleccionUbicacion>();
+
         protected override void OnModelCreating(ModelBuilder mb)
         {
             base.OnModelCreating(mb);
 
-            // =========================
-            // UNIQUE / INTEGRIDAD
-            // =========================
+            // -------------------------
+            // Unique
+            // -------------------------
             mb.Entity<Rol>()
               .HasIndex(r => r.Nombre)
               .IsUnique();
@@ -34,9 +39,9 @@ namespace SistemaVoto.Api.Data
               .HasIndex(h => new { h.EleccionId, h.UsuarioId })
               .IsUnique();
 
-            // =========================
-            // RELACIONES
-            // =========================
+            // -------------------------
+            // Relaciones core
+            // -------------------------
             mb.Entity<Lista>()
               .HasOne(l => l.Eleccion)
               .WithMany(e => e.Listas)
@@ -73,35 +78,85 @@ namespace SistemaVoto.Api.Data
               .HasForeignKey(v => v.ListaId)
               .OnDelete(DeleteBehavior.Restrict);
 
-            // =========================
-            // CHECK CONSTRAINTS (POSTGRES)
-            // =========================
+            // -------------------------
+            // Ubicaciones (opcionales)
+            // -------------------------
+            mb.Entity<Ubicacion>()
+              .HasOne(u => u.Parent)
+              .WithMany(u => u.Children)
+              .HasForeignKey(u => u.ParentId)
+              .OnDelete(DeleteBehavior.Restrict);
 
-            // 1) Voto: EXACTAMENTE UNO (CandidatoId XOR ListaId)
+            mb.Entity<RecintoElectoral>()
+              .HasOne(r => r.Ubicacion)
+              .WithMany()
+              .HasForeignKey(r => r.UbicacionId)
+              .OnDelete(DeleteBehavior.SetNull);
+
             mb.Entity<Voto>()
-              .ToTable(t => t.HasCheckConstraint(
+              .HasOne(v => v.Ubicacion)
+              .WithMany()
+              .HasForeignKey(v => v.UbicacionId)
+              .OnDelete(DeleteBehavior.SetNull);
+
+            mb.Entity<Voto>()
+              .HasOne(v => v.Recinto)
+              .WithMany()
+              .HasForeignKey(v => v.RecintoId)
+              .OnDelete(DeleteBehavior.SetNull);
+
+            mb.Entity<HistorialVotacion>()
+              .HasOne(h => h.Ubicacion)
+              .WithMany()
+              .HasForeignKey(h => h.UbicacionId)
+              .OnDelete(DeleteBehavior.SetNull);
+
+            mb.Entity<HistorialVotacion>()
+              .HasOne(h => h.Recinto)
+              .WithMany()
+              .HasForeignKey(h => h.RecintoId)
+              .OnDelete(DeleteBehavior.SetNull);
+
+            mb.Entity<EleccionUbicacion>()
+              .HasKey(x => new { x.EleccionId, x.UbicacionId });
+
+            mb.Entity<EleccionUbicacion>()
+              .HasOne(x => x.Eleccion)
+              .WithMany(e => e.EleccionUbicaciones)
+              .HasForeignKey(x => x.EleccionId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+            mb.Entity<EleccionUbicacion>()
+              .HasOne(x => x.Ubicacion)
+              .WithMany()
+              .HasForeignKey(x => x.UbicacionId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+            // -------------------------
+            //  CHECK constraints (Postgres) CORRECTOS
+            // -------------------------
+            mb.Entity<Voto>().ToTable(t => t.HasCheckConstraint(
                 "CK_Voto_ExactamenteUno",
-                "((\"CandidatoId\" IS NOT NULL AND \"ListaId\" IS NULL) OR (\"CandidatoId\" IS NULL AND \"ListaId\" IS NOT NULL))"
-              ));
+                "(\"CandidatoId\" IS NOT NULL AND \"ListaId\" IS NULL) OR (\"CandidatoId\" IS NULL AND \"ListaId\" IS NOT NULL)"
+            ));
 
-            // 2) Elección: coherencia escaños vs tipo
-            // TipoEleccion.Nominal = 0  => NumEscanos = 0
-            // TipoEleccion.Plancha = 1  => NumEscanos > 0
-            mb.Entity<Eleccion>()
-              .ToTable(t => t.HasCheckConstraint(
+            mb.Entity<Eleccion>().ToTable(t => t.HasCheckConstraint(
                 "CK_Eleccion_EscanosSegunTipo",
-                "((\"Tipo\" = 0 AND \"NumEscanos\" = 0) OR (\"Tipo\" = 1 AND \"NumEscanos\" > 0))"
-              ));
+                "(\"Tipo\" = 0 AND \"NumEscanos\" = 0) OR (\"Tipo\" = 1 AND \"NumEscanos\" > 0)"
+            ));
 
-            // =========================
-            // ÍNDICES
-            // =========================
+            // -------------------------
+            // Índices
+            // -------------------------
             mb.Entity<Voto>().HasIndex(v => new { v.EleccionId, v.CandidatoId });
             mb.Entity<Voto>().HasIndex(v => new { v.EleccionId, v.ListaId });
             mb.Entity<Voto>().HasIndex(v => new { v.EleccionId, v.FechaVotoUtc });
 
             mb.Entity<Lista>().HasIndex(l => new { l.EleccionId, l.Nombre });
             mb.Entity<Candidato>().HasIndex(c => new { c.EleccionId, c.Nombre });
+
+            mb.Entity<Ubicacion>().HasIndex(u => new { u.ParentId, u.Tipo, u.Nombre });
+            mb.Entity<RecintoElectoral>().HasIndex(r => new { r.UbicacionId, r.Nombre });
         }
     }
 }
