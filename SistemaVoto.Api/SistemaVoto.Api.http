@@ -1,0 +1,6 @@
+@SistemaVoto.Api_HostAddress = http://localhost:5049
+
+GET {{SistemaVoto.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
