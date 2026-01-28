@@ -2,16 +2,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia los archivos de proyecto necesarios
-COPY SistemaVoto.Api.csproj ./
-COPY ../SistemaVoto.Modelos/SistemaVoto.Modelos.csproj ../SistemaVoto.Modelos/
+# Copia los archivos de proyecto y restaura dependencias
+COPY SistemaVoto.Modelos/SistemaVoto.Modelos.csproj SistemaVoto.Modelos/
+COPY SistemaVoto.Api/SistemaVoto.Api.csproj SistemaVoto.Api/
+RUN dotnet restore SistemaVoto.Api/SistemaVoto.Api.csproj
 
-# Restaura dependencias
-RUN dotnet restore SistemaVoto.Api.csproj
-
-# Copia el resto de los archivos del proyecto y dependencias
-COPY . ./
-COPY ../SistemaVoto.Modelos ../SistemaVoto.Modelos
+# Copia el resto de los archivos
+COPY SistemaVoto.Modelos/ SistemaVoto.Modelos/
+COPY SistemaVoto.Api/ SistemaVoto.Api/
+WORKDIR /src/SistemaVoto.Api
 
 # Publica la aplicación
 RUN dotnet publish SistemaVoto.Api.csproj -c Release -o /app/publish
