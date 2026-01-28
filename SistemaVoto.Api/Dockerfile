@@ -1,18 +1,16 @@
-﻿# Utiliza la imagen oficial de .NET 8 para construir la aplicación
+﻿# Etapa de build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia los archivos del proyecto y restaura las dependencias
-COPY ["SistemaVoto.Api/SistemaVoto.Api.csproj", "SistemaVoto.Api/"]
-COPY ["SistemaVoto.Modelos/SistemaVoto.Modelos.csproj", "SistemaVoto.Modelos/"]
-RUN dotnet restore "SistemaVoto.Api/SistemaVoto.Api.csproj"
+COPY ../SistemaVoto.Modelos/SistemaVoto.Modelos.csproj ../SistemaVoto.Modelos/
+COPY SistemaVoto.Api.csproj ./
+RUN dotnet restore SistemaVoto.Api.csproj
 
-# Copia el resto de los archivos y compila la aplicación
+COPY ../SistemaVoto.Modelos ../SistemaVoto.Modelos
 COPY . .
-WORKDIR "/src/SistemaVoto.Api"
-RUN dotnet publish "SistemaVoto.Api.csproj" -c Release -o /app/publish
+RUN dotnet publish SistemaVoto.Api.csproj -c Release -o /app/publish
 
-# Utiliza la imagen de runtime para ejecutar la aplicación
+# Etapa de runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
