@@ -13,7 +13,7 @@ namespace SistemaVoto.Api
 
 
             builder.Services.AddDbContext<SistemaVotoDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DbContext.postgresql")
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DbContext.postgres-render")
     ?? throw new InvalidOperationException("Connection string 'DbContext.postgresql' not found.")));
 
             builder.Services.AddControllers();
