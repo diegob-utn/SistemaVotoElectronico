@@ -12,7 +12,7 @@ using SistemaVoto.Api.Data;
 namespace SistemaVoto.Api.Migrations
 {
     [DbContext(typeof(SistemaVotoDbContext))]
-    [Migration("20260130053130_v3")]
+    [Migration("20260130055721_v3")]
     partial class v3
     {
         /// <inheritdoc />
