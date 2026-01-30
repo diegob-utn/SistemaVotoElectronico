@@ -15,10 +15,10 @@ namespace SistemaVoto.Modelos
 
         [Required, StringLength(50)]
         public string Nombre { get; set; } = null!; // "Administrador", "Votante"
+        public string Descripcion { get; set; } = null!;
+        public bool Activo { get; set; } = true;
 
         [JsonIgnore]
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
-        public string Descripcion { get; set; }
-        public bool Activo { get; set; }
     }
 }
