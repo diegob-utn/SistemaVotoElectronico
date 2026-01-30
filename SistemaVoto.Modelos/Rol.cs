@@ -18,5 +18,7 @@ namespace SistemaVoto.Modelos
 
         [JsonIgnore]
         public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
+        public string Descripcion { get; set; }
+        public bool Activo { get; set; }
     }
 }

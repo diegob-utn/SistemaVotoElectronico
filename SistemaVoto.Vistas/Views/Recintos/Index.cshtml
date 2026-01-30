@@ -1,0 +1,31 @@
+﻿@model IEnumerable<SistemaVoto.Modelos.RecintoElectoral>
+@{
+    ViewData["Title"] = "Recintos Electorales";
+}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>🏫 Recintos de Votación</h2>
+    <a href="#" class="btn btn-primary">+ Nuevo Recinto</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nombre del Recinto</th>
+            <th>Dirección</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Nombre</td>
+                <td>@item.Direccion</td>
+                <td>
+                    <button class="btn btn-primary" style="font-size: 0.8em;">Editar</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

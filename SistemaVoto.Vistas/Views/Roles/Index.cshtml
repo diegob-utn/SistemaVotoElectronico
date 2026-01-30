@@ -1,0 +1,55 @@
+﻿@model IEnumerable<SistemaVoto.Modelos.Rol>
+
+@{
+    ViewData["Title"] = "Gestión de Roles";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Listado de Roles</h3>
+        <div class="card-tools">
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Nuevo Rol
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descripción del Rol</th>
+                    <th>Estado</th>
+                    <th style="width: 20%">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.Descripcion</td>
+                        <td>
+                            @if (item.Activo)
+                            {
+                                <span class="badge badge-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">Inactivo</span>
+                            }
+                        </td>
+                        <td>
+                            <a class="btn btn-info btn-sm" href="#">
+                                <i class="fas fa-pencil-alt"></i> Editar
+                            </a>
+                            <a class="btn btn-danger btn-sm" href="#">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

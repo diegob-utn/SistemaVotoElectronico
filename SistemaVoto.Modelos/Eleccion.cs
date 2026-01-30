@@ -38,5 +38,10 @@ namespace SistemaVoto.Modelos
 
         [JsonIgnore]
         public ICollection<EleccionUbicacion> EleccionUbicaciones { get; set; } = new List<EleccionUbicacion>();
+        public bool Activo { get; set; }
+       
+         public DateTime FechaInicio { get; set; } // Importante: DateTime
+         
+        
     }
 }
