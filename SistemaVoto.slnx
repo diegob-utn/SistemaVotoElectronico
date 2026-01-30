@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="SistemaVoto.Api/SistemaVoto.Api.csproj" />
   <Project Path="SistemaVoto.Modelos/SistemaVoto.Modelos.csproj" Id="0314d457-e2e9-412a-b1a1-6ff4559c6e4e" />
+  <Project Path="SistemaVoto.Test/SistemaVoto.Test.csproj" Id="4c067b0d-fffd-4311-996f-1c3d43fb1398" />
 </Solution>
