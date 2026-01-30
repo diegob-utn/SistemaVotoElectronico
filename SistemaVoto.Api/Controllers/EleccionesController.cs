@@ -140,6 +140,8 @@ namespace SistemaVoto.Api.Controllers
             return Ok(ApiResult<object>.Ok(items));
         }
 
+
+        /*
         // GET /api/elecciones/{id}/conteo?ubicacionId=1&recintoId=2
         // ✅ PLANO (sin ApiResult) para charts/widgets
         [HttpGet("{id:int}/conteo")]
@@ -289,6 +291,7 @@ namespace SistemaVoto.Api.Controllers
                 escanosWebster = web
             });
         }
+        */
 
         // -----------------------------
         // Escaños (D’Hondt y Webster)
