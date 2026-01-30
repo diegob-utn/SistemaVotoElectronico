@@ -11,10 +11,9 @@ namespace SistemaVoto.Api
 
             // Add services to the container.
 
-
             builder.Services.AddDbContext<SistemaVotoDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DbContext.postgres-render")
-    ?? throw new InvalidOperationException("Connection string 'DbContext.postgresql' not found.")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("DbContext.postgres-render")
+                ?? throw new InvalidOperationException("Connection string 'DbContext.postgres-render' not found."))); // Corregido el mensaje de error para coincidir con la clave
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -37,7 +36,7 @@ namespace SistemaVoto.Api
                     .AllowAnyMethod()
                     .AllowCredentials());
             });
-          
+
 
             var app = builder.Build();
             // ...
@@ -47,7 +46,7 @@ namespace SistemaVoto.Api
             app.UseCors("AllowDashboard");
 
             // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment())
+            //if (app.Environment.IsDevelopment()) // Comentado para ver Swagger en Producción/Render si lo deseas
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
@@ -57,8 +56,30 @@ namespace SistemaVoto.Api
 
             app.UseAuthorization();
 
-
             app.MapControllers();
+
+            // =================================================================
+            //  SOLUCIÓN: APLICAR MIGRACIONES AUTOMÁTICAMENTE AL INICIAR
+            // =================================================================
+            // Esto crea las tablas en Render si no existen.
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var dbContext = services.GetRequiredService<SistemaVotoDbContext>();
+
+                    Console.WriteLine(" Intentando aplicar migraciones...");
+                    dbContext.Database.Migrate();
+                    Console.WriteLine(" Base de datos migrada exitosamente (Tablas creadas).");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($" Error crítico al migrar la base de datos: {ex.Message}");
+                    // Opcional: throw; si quieres que la app se detenga si falla la DB
+                }
+            }
+            // =================================================================
 
             app.Run();
         }
