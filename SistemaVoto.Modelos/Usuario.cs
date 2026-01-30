@@ -30,5 +30,7 @@ namespace SistemaVoto.Modelos
 
         [JsonIgnore]
         public ICollection<HistorialVotacion> HistorialVotaciones { get; set; } = new List<HistorialVotacion>();
+        public string NombreUsuario { get; set; }
+        public bool Activo { get; set; }
     }
 }

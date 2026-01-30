@@ -31,5 +31,6 @@ namespace SistemaVoto.Modelos
 
         [JsonIgnore]
         public Lista? Lista { get; set; }
+        public string Partido { get; set; }
     }
 }

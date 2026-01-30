@@ -1,0 +1,56 @@
+﻿@model IEnumerable<SistemaVoto.Modelos.Candidato>
+
+@{
+    ViewData["Title"] = "Gestión de Candidatos";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">👤 Listado de Candidatos</h3>
+        <div class="card-tools">
+            <a href="#" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Nuevo Candidato
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <table class="table table-striped projects">
+            <thead>
+                <tr>
+                    <th style="width: 5%">ID</th>
+                    <th style="width: 35%">Nombre del Candidato</th>
+                    <th style="width: 30%">Partido / Lista</th>
+                    <th style="width: 20%">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <i class="fas fa-user-circle fa-2x text-secondary mr-2"></i>
+                                <span style="margin-left: 10px; font-weight: bold;">@item.Nombre</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-info" style="font-size: 0.9em;">
+                                @item.Partido
+                            </span>
+                        </td>
+                        <td class="project-actions">
+                            <a class="btn btn-info btn-sm" href="#">
+                                <i class="fas fa-pencil-alt"></i> Editar
+                            </a>
+                            <a class="btn btn-danger btn-sm" href="#">
+                                <i class="fas fa-trash"></i> Borrar
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

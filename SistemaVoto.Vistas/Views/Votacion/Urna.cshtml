@@ -1,0 +1,41 @@
+﻿@model IEnumerable<SistemaVoto.Modelos.Candidato>
+@{
+    ViewData["Title"] = "Urna Electrónica";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12 text-center">
+            <h2 class="text-primary"><i class="fas fa-vote-yea"></i> Emita su Voto</h2>
+            <p class="text-muted">Seleccione su candidato de preferencia haciendo clic en el botón.</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-4 col-sm-6 col-12 mb-4">
+                <div class="card card-primary card-outline h-100">
+                    <div class="card-body box-profile text-center">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-user-circle fa-5x text-secondary"></i>
+                        </div>
+
+                        <h3 class="profile-username text-center">@item.Nombre</h3>
+                        <p class="text-muted text-center">@item.Partido</p>
+
+                        <ul class="list-group list-group-unbordered mb-3">
+                            <li class="list-group-item">
+                                <b>Lista</b> <a class="float-right">1</a>
+                            </li>
+                        </ul>
+
+                        <a href="#" class="btn btn-primary btn-block btn-lg">
+                            <b><i class="fas fa-check-circle"></i> VOTAR</b>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
