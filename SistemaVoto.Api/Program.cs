@@ -49,10 +49,7 @@ namespace SistemaVoto.Api
             builder.Services.AddCors(o =>
             {
                 o.AddPolicy("AllowDashboard", p =>
-                    p.WithOrigins(
-                        "http://localhost:5500",
-                        "http://127.0.0.1:5500"
-                    )
+                    p.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials());

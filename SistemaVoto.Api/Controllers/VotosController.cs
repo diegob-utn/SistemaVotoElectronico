@@ -32,7 +32,14 @@ namespace SistemaVoto.Api.Controllers
             if (eleccion is null)
                 return NotFound(ApiResult<object>.Fail("Elección no encontrada."));
 
-            // 0.1) (opcional) validar estado/fechas si quieres bloquear fuera de rango:
+            // 0.1) Validar estado/fechas (Cierre automático)
+            var now = DateTime.UtcNow;
+            if (now < eleccion.FechaInicioUtc) 
+                return BadRequest(ApiResult<object>.Fail("La elección aún no ha comenzado."));
+            if (now > eleccion.FechaFinUtc) 
+                return BadRequest(ApiResult<object>.Fail("La elección ha finalizado."));
+
+            // Si quisieras usar el Estado explícito también:
             // if (eleccion.Estado != EstadoEleccion.Activa) return BadRequest(ApiResult<object>.Fail("Elección no activa."));
 
             // 1) XOR: exactamente uno (CandidatoId o ListaId)
