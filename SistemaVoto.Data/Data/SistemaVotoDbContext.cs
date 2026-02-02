@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaVoto.Modelos;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace SistemaVoto.Data.Data
 {
-    public class SistemaVotoDbContext : DbContext
-    {
+  public class SistemaVotoDbContext : IdentityDbContext
+  {
         public SistemaVotoDbContext(DbContextOptions<SistemaVotoDbContext> options) : base(options) { }
 
         public DbSet<Usuario> Usuarios => Set<Usuario>();

@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using SistemaVoto.MVC.Data;
+using Microsoft.AspNetCore.Authentication.Cookies; // Necesario para cookies
 
 namespace SistemaVoto.MVC
 {
@@ -10,41 +8,60 @@ namespace SistemaVoto.MVC
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            // -----------------------------------------------------------
+            // 1. ELIMINAR O COMENTAR TODO ESTO (LO QUE BORRAS):
+            // -----------------------------------------------------------
+            /*
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            builder.Services.AddDefaultIdentity<IdentityUser>(...)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+            */
+
+            // -----------------------------------------------------------
+            // 2. AGREGAR ESTO (LA CONFIGURACIÓN CLIENTE API):
+            // -----------------------------------------------------------
+
+            // Configurar HttpClient para hablar con la API
+            var apiUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl");
+            builder.Services.AddScoped(sp => new HttpClient
+            {
+                BaseAddress = new Uri(apiUrl!)
+            });
+
+            // Configurar Autenticación por Cookies (El MVC recuerda al usuario con una cookie)
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Cuenta/Login"; // Ruta a tu vista de login
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                });
+
             builder.Services.AddControllersWithViews();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseMigrationsEndPoint();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+            // ... (Resto de la configuración de entorno igual) ...
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
 
-            app.UseAuthorization();
+            // -----------------------------------------------------------
+            // 3. ACTIVAR LOS MIDDLEWARES DE SEGURIDAD
+            // -----------------------------------------------------------
+            app.UseAuthentication(); // <--- IMPORTANTE: Identifica quién es el usuario (lee la cookie)
+            app.UseAuthorization();  // <--- IMPORTANTE: Verifica qué permisos tiene
 
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
-            app.MapRazorPages();
+
+            // app.MapRazorPages(); // <--- ELIMINAR ESTO (Ya no usas las páginas automáticas de Identity)
 
             app.Run();
         }
