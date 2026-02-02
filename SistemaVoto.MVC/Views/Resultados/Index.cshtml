@@ -1,0 +1,463 @@
+@model ResultadosViewModel
+@{
+    ViewData["Title"] = "Resultados - " + Model.Eleccion.Titulo;
+}
+
+<div class="resultados-container">
+    <!-- Header -->
+    <div class="resultados-header">
+        <div>
+            <a href="/Elecciones" class="btn btn-ghost btn-sm">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                Volver
+            </a>
+            <h1>@Model.Eleccion.Titulo</h1>
+            <p class="text-muted">Resultados electorales</p>
+        </div>
+        <div class="header-actions">
+            <a href="/Resultados/ExportarCsv/@Model.Eleccion.Id" class="btn btn-secondary">
+                <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+                Exportar CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    @if (Model.Resultados != null)
+    {
+        <div class="stats-row">
+            <div class="stat-card glass-card">
+                <div class="stat-card-icon" style="background: rgba(var(--accent-rgb), 0.15);">
+                    <i data-lucide="vote" style="width: 24px; height: 24px; color: var(--accent);"></i>
+                </div>
+                <div class="stat-card-value">@Model.Resultados.TotalVotos.ToString("N0")</div>
+                <div class="stat-card-label">Total Votos</div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15);">
+                    <i data-lucide="users" style="width: 24px; height: 24px; color: var(--color-success);"></i>
+                </div>
+                <div class="stat-card-value">@Model.Resultados.Candidatos.Count</div>
+                <div class="stat-card-label">Candidatos</div>
+            </div>
+            @if (Model.Eleccion.NumEscanos > 0)
+            {
+                <div class="stat-card glass-card">
+                    <div class="stat-card-icon" style="background: rgba(163, 122, 204, 0.15);">
+                        <i data-lucide="armchair" style="width: 24px; height: 24px; color: var(--color-purple);"></i>
+                    </div>
+                    <div class="stat-card-value">@Model.Eleccion.NumEscanos</div>
+                    <div class="stat-card-label">Escanos</div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Charts Grid -->
+    <div class="charts-grid">
+        <!-- Bar Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Votos por Candidato</h4>
+            </div>
+            <div class="card-body">
+                <div id="chartResultados"></div>
+            </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Distribucion de Votos</h4>
+            </div>
+            <div class="card-body">
+                <div id="chartDistribucion"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribucion de Escanos -->
+    @if (Model.DistribucionDHondt != null && Model.DistribucionDHondt.Any())
+    {
+        <div class="escanos-section">
+            <h2 class="section-title">
+                <i data-lucide="armchair" style="width: 24px; height: 24px;"></i>
+                Distribucion de Escanos
+            </h2>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="dhondt" onclick="switchTab('dhondt')">Metodo D'Hondt</button>
+                <button class="tab" data-tab="webster" onclick="switchTab('webster')">Metodo Webster</button>
+            </div>
+            
+            <!-- D'Hondt Table -->
+            <div class="tab-content active" id="dhondt-content">
+                <div class="escanos-grid">
+                    @foreach (var item in Model.DistribucionDHondt)
+                    {
+                        <div class="escano-card glass-card">
+                            <div class="escano-value">@item.Escanos</div>
+                            <div class="escano-label">@item.Nombre</div>
+                            <div class="escano-bar" style="width: @(item.Escanos * 100.0 / Model.Eleccion.NumEscanos)%"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <!-- Webster Table -->
+            <div class="tab-content" id="webster-content" style="display: none;">
+                <div class="escanos-grid">
+                    @if (Model.DistribucionWebster != null)
+                    {
+                        @foreach (var item in Model.DistribucionWebster)
+                        {
+                            <div class="escano-card glass-card">
+                                <div class="escano-value">@item.Escanos</div>
+                                <div class="escano-label">@item.Nombre</div>
+                                <div class="escano-bar" style="width: @(item.Escanos * 100.0 / Model.Eleccion.NumEscanos)%"></div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Detailed Results Table -->
+    <div class="card" style="margin-top: 2rem;">
+        <div class="card-header">
+            <h4 class="card-title">Resultados Detallados</h4>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Posicion</th>
+                        <th>Candidato</th>
+                        <th>Partido</th>
+                        <th>Votos</th>
+                        <th>Porcentaje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Resultados?.Candidatos != null)
+                    {
+                        var posicion = 1;
+                        @foreach (var candidato in Model.Resultados.Candidatos.OrderByDescending(c => c.Votos))
+                        {
+                            <tr>
+                                <td>
+                                    @if (posicion == 1)
+                                    {
+                                        <span class="badge badge-accent">1ro</span>
+                                    }
+                                    else if (posicion == 2)
+                                    {
+                                        <span class="badge badge-info">2do</span>
+                                    }
+                                    else if (posicion == 3)
+                                    {
+                                        <span class="badge badge-warning">3ro</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@posicion</span>
+                                    }
+                                </td>
+                                <td>@candidato.Nombre</td>
+                                <td>@candidato.PartidoPolitico</td>
+                                <td><strong>@candidato.Votos.ToString("N0")</strong></td>
+                                <td>
+                                    <div class="progress-cell">
+                                        <div class="progress-bar" style="width: @candidato.Porcentaje%"></div>
+                                        <span>@candidato.Porcentaje.ToString("F1")%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            posicion++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .resultados-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .resultados-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+    
+    .resultados-header h1 {
+        margin: 0.5rem 0 0;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    #chartResultados,
+    #chartDistribucion {
+        min-height: 350px;
+    }
+    
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tab {
+        padding: 0.75rem 1.5rem;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    
+    .tab:hover {
+        background: var(--glass-bg);
+    }
+    
+    .tab.active {
+        background: var(--accent);
+        color: #0D1017;
+        border-color: var(--accent);
+    }
+    
+    .escanos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .escano-card {
+        padding: 1.5rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .escano-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+    
+    .escano-label {
+        color: var(--text-secondary);
+        font-size: 0.9375rem;
+    }
+    
+    .escano-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 4px;
+        background: var(--accent);
+        transition: width var(--transition-normal);
+    }
+    
+    .progress-cell {
+        position: relative;
+        min-width: 100px;
+    }
+    
+    .progress-bar {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 20px;
+        background: rgba(var(--accent-rgb), 0.2);
+        border-radius: 10px;
+    }
+    
+    .progress-cell span {
+        position: relative;
+        z-index: 1;
+    }
+    
+    @@media (max-width: 1024px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @@media (max-width: 768px) {
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .resultados-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/apexcharts-config.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            initCharts();
+        });
+        
+        function initCharts() {
+            @if (Model.Resultados?.Candidatos != null && Model.Resultados.Candidatos.Any())
+            {
+                var candidatos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.Resultados.Candidatos.Select(c => new { 
+                        nombre = c.Nombre, 
+                        votos = c.Votos, 
+                        porcentaje = c.Porcentaje 
+                    })));
+                
+                <text>
+                // Bar Chart
+                var optionsBar = {
+                    series: [{
+                        name: 'Votos',
+                        data: candidatos.map(c => c.votos)
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: 350,
+                        background: 'transparent',
+                        toolbar: { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: true,
+                            borderRadius: 6,
+                            distributed: true,
+                            dataLabels: { position: 'top' }
+                        }
+                    },
+                    colors: [
+                        getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
+                    ],
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function(val, opt) {
+                            return val.toLocaleString();
+                        },
+                        style: { fontSize: '12px' },
+                        offsetX: 10
+                    },
+                    xaxis: {
+                        categories: candidatos.map(c => c.nombre),
+                        labels: {
+                            style: {
+                                colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                            }
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: {
+                                colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                            }
+                        }
+                    },
+                    grid: {
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                    },
+                    theme: {
+                        mode: document.documentElement.getAttribute('data-theme') || 'light'
+                    }
+                };
+                
+                var chartBar = new ApexCharts(document.querySelector("#chartResultados"), optionsBar);
+                chartBar.render();
+                
+                // Pie Chart
+                var optionsPie = {
+                    series: candidatos.map(c => c.votos),
+                    labels: candidatos.map(c => c.nombre),
+                    chart: {
+                        type: 'donut',
+                        height: 350,
+                        background: 'transparent'
+                    },
+                    colors: [
+                        getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
+                        getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
+                    ],
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '60%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total',
+                                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
+                        }
+                    },
+                    theme: {
+                        mode: document.documentElement.getAttribute('data-theme') || 'light'
+                    }
+                };
+                
+                var chartPie = new ApexCharts(document.querySelector("#chartDistribucion"), optionsPie);
+                chartPie.render();
+                </text>
+            }
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById(`${tab}-content`).style.display = 'block';
+        }
+    </script>
+}

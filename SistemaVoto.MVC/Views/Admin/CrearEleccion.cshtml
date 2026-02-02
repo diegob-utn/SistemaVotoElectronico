@@ -1,0 +1,162 @@
+@model EleccionViewModel
+@{
+    ViewData["Title"] = "Crear Eleccion";
+}
+
+<div class="form-container">
+    <div class="form-card glass-card">
+        <div class="form-header">
+            <a href="/Admin/Elecciones" class="btn btn-ghost btn-sm">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                Volver
+            </a>
+            <h1>
+                <i data-lucide="vote" style="width: 32px; height: 32px;"></i>
+                Crear Nueva Eleccion
+            </h1>
+            <p class="text-muted">Configure los parametros del proceso electoral</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form asp-action="CrearEleccion" method="post">
+            <div class="form-group">
+                <label asp-for="Titulo" class="form-label">
+                    <i data-lucide="type" style="width: 16px; height: 16px;"></i>
+                    Titulo de la Eleccion
+                </label>
+                <input asp-for="Titulo" class="form-control" placeholder="Ej: Elecciones Presidenciales 2025" />
+                <span asp-validation-for="Titulo" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Descripcion" class="form-label">
+                    <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                    Descripcion (Opcional)
+                </label>
+                <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripcion del proceso electoral..."></textarea>
+                <span asp-validation-for="Descripcion" class="text-error"></span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="FechaInicioUtc" class="form-label">
+                        <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                        Fecha de Inicio
+                    </label>
+                    <input asp-for="FechaInicioUtc" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="FechaInicioUtc" class="text-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="FechaFinUtc" class="form-label">
+                        <i data-lucide="calendar-check" style="width: 16px; height: 16px;"></i>
+                        Fecha de Fin
+                    </label>
+                    <input asp-for="FechaFinUtc" class="form-control" type="datetime-local" />
+                    <span asp-validation-for="FechaFinUtc" class="text-error"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Tipo" class="form-label">
+                        <i data-lucide="list" style="width: 16px; height: 16px;"></i>
+                        Tipo de Eleccion
+                    </label>
+                    <select asp-for="Tipo" class="form-control">
+                        <option value="Nominal">Nominal - Voto por candidato individual</option>
+                        <option value="Plancha">Plancha - Voto por lista/partido (usa escanos)</option>
+                    </select>
+                    <span asp-validation-for="Tipo" class="text-error"></span>
+                    <small class="text-muted">Nominal: 1 voto = 1 candidato. Plancha: distribucion por escanos.</small>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="NumEscanos" class="form-label">
+                        <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                        Numero de Escanos
+                    </label>
+                    <input asp-for="NumEscanos" class="form-control" type="number" min="1" max="100" />
+                    <span asp-validation-for="NumEscanos" class="text-error"></span>
+                    <small class="text-muted">Solo aplica para tipo Plancha. En Nominal se ignora.</small>
+                </div>
+            </div>
+
+            <div class="form-group form-check">
+                <input asp-for="Activo" class="form-check-input" type="checkbox" />
+                <label asp-for="Activo" class="form-check-label">Activar eleccion al crear</label>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+                    Crear Eleccion
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .form-card {
+        padding: 2.5rem;
+    }
+    
+    .form-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .form-header h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 1rem 0 0.5rem;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+    
+    .form-actions {
+        margin-top: 2rem;
+        text-align: center;
+    }
+    
+    @@media (max-width: 600px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

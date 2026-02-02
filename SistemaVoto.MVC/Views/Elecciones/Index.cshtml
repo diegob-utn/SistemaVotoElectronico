@@ -1,0 +1,312 @@
+@model EleccionesIndexViewModel
+@{
+    ViewData["Title"] = "Elecciones";
+}
+
+<div class="elecciones-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>Elecciones</h1>
+            <p class="text-muted">Consulta y participa en los procesos electorales</p>
+        </div>
+    </div>
+
+    <!-- Elecciones Activas -->
+    @if (Model.Activas.Any())
+    {
+        <section class="elecciones-section">
+            <h2 class="section-title">
+                <i data-lucide="check-circle" style="width: 24px; height: 24px; color: var(--color-success);"></i>
+                Elecciones Activas
+            </h2>
+            <div class="elecciones-grid">
+                @foreach (var eleccion in Model.Activas)
+                {
+                    <div class="eleccion-card active animate-fadeIn">
+                        <div class="eleccion-status">
+                            <span class="badge badge-success">Activa</span>
+                        </div>
+                        <h3 class="eleccion-title">@eleccion.Titulo</h3>
+                        <p class="eleccion-desc">@(eleccion.Descripcion ?? "Sin descripcion")</p>
+                        <div class="eleccion-meta">
+                            <div class="meta-item">
+                                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                <span>Finaliza: @eleccion.FechaFinUtc.ToString("dd MMM yyyy, HH:mm")</span>
+                            </div>
+                            <div class="meta-item">
+                                <i data-lucide="vote" style="width: 16px; height: 16px;"></i>
+                                <span>@eleccion.Tipo</span>
+                            </div>
+                        </div>
+                        <div class="eleccion-actions">
+                            <a href="/Votacion/@eleccion.Id" class="btn btn-primary">
+                                <i data-lucide="check-square" style="width: 18px; height: 18px;"></i>
+                                Votar
+                            </a>
+                            <a href="/Elecciones/Detalle/@eleccion.Id" class="btn btn-secondary">Ver Detalles</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Elecciones Pendientes -->
+    @if (Model.Pendientes.Any())
+    {
+        <section class="elecciones-section">
+            <h2 class="section-title">
+                <i data-lucide="clock" style="width: 24px; height: 24px; color: var(--color-warning);"></i>
+                Proximas Elecciones
+            </h2>
+            <div class="elecciones-grid">
+                @foreach (var eleccion in Model.Pendientes)
+                {
+                    <div class="eleccion-card pending animate-fadeIn">
+                        <div class="eleccion-status">
+                            <span class="badge badge-warning">Pendiente</span>
+                        </div>
+                        <h3 class="eleccion-title">@eleccion.Titulo</h3>
+                        <p class="eleccion-desc">@(eleccion.Descripcion ?? "Sin descripcion")</p>
+                        <div class="eleccion-meta">
+                            <div class="meta-item">
+                                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                <span>Inicia: @eleccion.FechaInicioUtc.ToString("dd MMM yyyy, HH:mm")</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Countdown -->
+                        <div class="countdown-mini" data-target="@eleccion.FechaInicioUtc.ToString("o")">
+                            <span class="countdown-text">Comienza en:</span>
+                            <span class="countdown-value">Calculando...</span>
+                        </div>
+                        
+                        <div class="eleccion-actions">
+                            <a href="/Elecciones/Detalle/@eleccion.Id" class="btn btn-secondary">Ver Detalles</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Elecciones Finalizadas -->
+    @if (Model.Finalizadas.Any())
+    {
+        <section class="elecciones-section">
+            <h2 class="section-title">
+                <i data-lucide="archive" style="width: 24px; height: 24px; color: var(--color-info);"></i>
+                Elecciones Finalizadas
+            </h2>
+            <div class="elecciones-grid">
+                @foreach (var eleccion in Model.Finalizadas)
+                {
+                    <div class="eleccion-card finished animate-fadeIn">
+                        <div class="eleccion-status">
+                            <span class="badge badge-info">Finalizada</span>
+                        </div>
+                        <h3 class="eleccion-title">@eleccion.Titulo</h3>
+                        <p class="eleccion-desc">@(eleccion.Descripcion ?? "Sin descripcion")</p>
+                        <div class="eleccion-meta">
+                            <div class="meta-item">
+                                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                <span>Finalizo: @eleccion.FechaFinUtc.ToString("dd MMM yyyy")</span>
+                            </div>
+                        </div>
+                        <div class="eleccion-actions">
+                            <a href="/Resultados/@eleccion.Id" class="btn btn-primary">
+                                <i data-lucide="bar-chart" style="width: 18px; height: 18px;"></i>
+                                Ver Resultados
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Empty State -->
+    @if (!Model.Activas.Any() && !Model.Pendientes.Any() && !Model.Finalizadas.Any())
+    {
+        <div class="empty-state">
+            <i data-lucide="vote" style="width: 64px; height: 64px; opacity: 0.5;"></i>
+            <h3>No hay elecciones disponibles</h3>
+            <p>Actualmente no hay procesos electorales registrados en el sistema.</p>
+        </div>
+    }
+</div>
+
+<style>
+    .elecciones-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+    }
+    
+    .elecciones-section {
+        margin-bottom: 3rem;
+    }
+    
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+    }
+    
+    .elecciones-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .eleccion-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        transition: all var(--transition-normal);
+    }
+    
+    .eleccion-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .eleccion-card.active {
+        border-left: 4px solid var(--color-success);
+    }
+    
+    .eleccion-card.pending {
+        border-left: 4px solid var(--color-warning);
+    }
+    
+    .eleccion-card.finished {
+        border-left: 4px solid var(--color-info);
+    }
+    
+    .eleccion-status {
+        margin-bottom: 0.75rem;
+    }
+    
+    .eleccion-title {
+        font-size: 1.25rem;
+        margin: 0 0 0.5rem 0;
+        color: var(--text-primary);
+    }
+    
+    .eleccion-desc {
+        color: var(--text-secondary);
+        font-size: 0.9375rem;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+    
+    .eleccion-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+    }
+    
+    .countdown-mini {
+        background: var(--bg-panel);
+        border-radius: var(--border-radius-sm);
+        padding: 0.75rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .countdown-text {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: block;
+    }
+    
+    .countdown-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--accent);
+    }
+    
+    .eleccion-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+    
+    .eleccion-actions .btn {
+        flex: 1;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-muted);
+    }
+    
+    .empty-state h3 {
+        margin-top: 1rem;
+        color: var(--text-primary);
+    }
+    
+    @@media (max-width: 768px) {
+        .elecciones-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            
+            // Actualizar countdowns
+            function updateCountdowns() {
+                document.querySelectorAll('.countdown-mini').forEach(el => {
+                    const target = new Date(el.dataset.target);
+                    const now = new Date();
+                    const diff = target - now;
+                    
+                    if (diff <= 0) {
+                        el.querySelector('.countdown-value').textContent = 'Ya inicio!';
+                        return;
+                    }
+                    
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let text = '';
+                    if (days > 0) text += days + 'd ';
+                    if (hours > 0) text += hours + 'h ';
+                    text += minutes + 'm';
+                    
+                    el.querySelector('.countdown-value').textContent = text;
+                });
+            }
+            
+            updateCountdowns();
+            setInterval(updateCountdowns, 60000);
+        });
+    </script>
+}

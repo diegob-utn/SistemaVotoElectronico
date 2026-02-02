@@ -1,0 +1,325 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="text-muted">Bienvenido al panel de administracion</p>
+        </div>
+        <div class="dashboard-actions">
+            <a href="/Admin/Elecciones" class="btn btn-primary">
+                <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                Nueva Eleccion
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card animate-fadeIn delay-1">
+            <div class="stat-card-icon" style="background: rgba(85, 180, 212, 0.15); color: var(--color-info);">
+                <i data-lucide="vote" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div class="stat-card-value">@Model.TotalElecciones</div>
+            <div class="stat-card-label">Total Elecciones</div>
+        </div>
+
+        <div class="stat-card animate-fadeIn delay-2">
+            <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15); color: var(--color-success);">
+                <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div class="stat-card-value">@Model.EleccionesActivas</div>
+            <div class="stat-card-label">Elecciones Activas</div>
+        </div>
+
+        <div class="stat-card animate-fadeIn delay-3">
+            <div class="stat-card-icon" style="background: rgba(163, 122, 204, 0.15); color: var(--color-purple);">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div class="stat-card-value">@Model.TotalUsuarios</div>
+            <div class="stat-card-label">Usuarios Registrados</div>
+        </div>
+
+        <div class="stat-card animate-fadeIn delay-4">
+            <div class="stat-card-icon" style="background: rgba(var(--accent-rgb), 0.15); color: var(--accent);">
+                <i data-lucide="bar-chart-3" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div class="stat-card-value">@Model.TotalVotos</div>
+            <div class="stat-card-label">Total Votos</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-grid">
+        <!-- Chart: Elecciones por Estado -->
+        <div class="card animate-fadeIn">
+            <div class="card-header">
+                <h4 class="card-title">Estado de Elecciones</h4>
+            </div>
+            <div class="card-body">
+                <div id="chartEleccionesEstado"></div>
+            </div>
+        </div>
+
+        <!-- Chart: Participacion -->
+        <div class="card animate-fadeIn">
+            <div class="card-header">
+                <h4 class="card-title">Participacion Reciente</h4>
+            </div>
+            <div class="card-body">
+                <div id="chartParticipacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Elections Table -->
+    <div class="card animate-fadeIn" style="margin-top: 1.5rem;">
+        <div class="card-header flex justify-between items-center">
+            <h4 class="card-title">Elecciones Recientes</h4>
+            <a href="/Admin/Elecciones" class="btn btn-ghost btn-sm">Ver todas</a>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Titulo</th>
+                        <th>Tipo</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Elecciones != null && Model.Elecciones.Any())
+                    {
+                        @foreach (var eleccion in Model.Elecciones)
+                        {
+                            <tr>
+                                <td>@eleccion.Titulo</td>
+                                <td>@eleccion.Tipo</td>
+                                <td>@eleccion.FechaInicioUtc.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@eleccion.FechaFinUtc.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @{
+                                        var badgeClass = eleccion.Estado switch
+                                        {
+                                            "Activa" => "badge-success",
+                                            "Pendiente" => "badge-warning",
+                                            "Finalizada" => "badge-info",
+                                            _ => "badge-accent"
+                                        };
+                                    }
+                                    <span class="badge @badgeClass">@eleccion.Estado</span>
+                                </td>
+                                <td>
+                                    <a href="/Resultados/@eleccion.Id" class="btn btn-ghost btn-sm" title="Ver resultados">
+                                        <i data-lucide="bar-chart" style="width: 16px; height: 16px;"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">
+                                No hay elecciones registradas
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .dashboard-header h1 {
+        margin: 0;
+    }
+    
+    .dashboard-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    #chartEleccionesEstado,
+    #chartParticipacion {
+        min-height: 300px;
+    }
+    
+    @@media (max-width: 1200px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @@media (max-width: 768px) {
+        .stats-grid,
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/apexcharts-config.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            
+            // Datos para los graficos (en produccion vendrian de la API)
+            var eleccionesData = {
+                activas: @Model.EleccionesActivas,
+                pendientes: @(Model.TotalElecciones - Model.EleccionesActivas),
+                finalizadas: 0
+            };
+            
+            // Grafico de estado de elecciones (Donut)
+            var optionsDonut = {
+                series: [eleccionesData.activas, eleccionesData.pendientes, eleccionesData.finalizadas],
+                chart: {
+                    type: 'donut',
+                    height: 300,
+                    background: 'transparent'
+                },
+                labels: ['Activas', 'Pendientes', 'Finalizadas'],
+                colors: [
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim()
+                ],
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    style: {
+                        fontSize: '14px'
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
+                                }
+                            }
+                        }
+                    }
+                },
+                theme: {
+                    mode: document.documentElement.getAttribute('data-theme') || 'light'
+                }
+            };
+            
+            var chartDonut = new ApexCharts(document.querySelector("#chartEleccionesEstado"), optionsDonut);
+            chartDonut.render();
+            
+            // Grafico de participacion (Area)
+            var optionsArea = {
+                series: [{
+                    name: 'Votos',
+                    data: [30, 40, 35, 50, 49, 60, 70, 91, 125]
+                }],
+                chart: {
+                    type: 'area',
+                    height: 300,
+                    background: 'transparent',
+                    toolbar: { show: false }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                colors: [getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.4,
+                        opacityTo: 0.1
+                    }
+                },
+                xaxis: {
+                    categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'],
+                    labels: {
+                        style: {
+                            colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                        }
+                    }
+                },
+                grid: {
+                    borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                },
+                theme: {
+                    mode: document.documentElement.getAttribute('data-theme') || 'light'
+                }
+            };
+            
+            var chartArea = new ApexCharts(document.querySelector("#chartParticipacion"), optionsArea);
+            chartArea.render();
+            
+            // Actualizar graficos cuando cambie el tema
+            window.addEventListener('themechange', function(e) {
+                chartDonut.updateOptions({
+                    theme: { mode: e.detail.theme }
+                });
+                chartArea.updateOptions({
+                    theme: { mode: e.detail.theme }
+                });
+            });
+        });
+    </script>
+}

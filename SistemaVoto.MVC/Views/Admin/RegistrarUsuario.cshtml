@@ -1,0 +1,137 @@
+@model RegistroUsuarioViewModel
+@{
+    ViewData["Title"] = "Registrar Usuario";
+}
+
+<div class="registro-container">
+    <div class="registro-card glass-card">
+        <div class="registro-header">
+            <a href="/Admin/UsuariosIdentity" class="btn btn-ghost btn-sm">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                Volver
+            </a>
+            <h1>
+                <i data-lucide="user-plus" style="width: 32px; height: 32px;"></i>
+                Registrar Nuevo Usuario
+            </h1>
+            <p class="text-muted">Complete el formulario para crear un nuevo usuario en el sistema</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form asp-action="RegistrarUsuario" method="post">
+            <div class="form-group">
+                <label asp-for="NombreCompleto" class="form-label">
+                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                    Nombre Completo
+                </label>
+                <input asp-for="NombreCompleto" class="form-control" placeholder="Juan Perez" />
+                <span asp-validation-for="NombreCompleto" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email" class="form-label">
+                    <i data-lucide="mail" style="width: 16px; height: 16px;"></i>
+                    Email
+                </label>
+                <input asp-for="Email" class="form-control" type="email" placeholder="usuario@ejemplo.com" />
+                <span asp-validation-for="Email" class="text-error"></span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Password" class="form-label">
+                        <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                        Contrasena
+                    </label>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="****" />
+                    <span asp-validation-for="Password" class="text-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword" class="form-label">
+                        <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                        Confirmar Contrasena
+                    </label>
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" placeholder="****" />
+                    <span asp-validation-for="ConfirmPassword" class="text-error"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Rol" class="form-label">
+                    <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                    Rol
+                </label>
+                <select asp-for="Rol" class="form-control">
+                    <option value="Usuario">Usuario (Votante)</option>
+                    <option value="Administrador">Administrador</option>
+                </select>
+                <span asp-validation-for="Rol" class="text-error"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                    Crear Usuario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .registro-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .registro-card {
+        padding: 2.5rem;
+    }
+    
+    .registro-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .registro-header h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 1rem 0 0.5rem;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .form-actions {
+        margin-top: 2rem;
+        text-align: center;
+    }
+    
+    @@media (max-width: 600px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

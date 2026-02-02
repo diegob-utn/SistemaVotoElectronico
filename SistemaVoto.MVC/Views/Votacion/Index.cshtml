@@ -1,0 +1,290 @@
+@model VotacionViewModel
+@{
+    ViewData["Title"] = "Votar - " + Model.Eleccion.Titulo;
+}
+
+<div class="votacion-container">
+    <!-- Header -->
+    <div class="votacion-header">
+        <a href="/Elecciones" class="btn btn-ghost">
+            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+            Volver
+        </a>
+        <h1>@Model.Eleccion.Titulo</h1>
+        <p class="text-muted">Selecciona tu candidato y confirma tu voto</p>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- Voting Form -->
+    <form asp-action="Votar" method="post" id="votacionForm">
+        <input type="hidden" name="eleccionId" value="@Model.Eleccion.Id" />
+        <input type="hidden" name="candidatoId" id="candidatoId" value="" />
+        
+        <!-- Candidates Grid -->
+        <div class="candidatos-grid">
+            @foreach (var candidato in Model.Candidatos)
+            {
+                <div class="vote-card" data-candidato-id="@candidato.Id" onclick="selectCandidate(@candidato.Id)">
+                    <div class="vote-card-check">
+                        <i data-lucide="check" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(candidato.FotoUrl))
+                    {
+                        <img src="@candidato.FotoUrl" alt="@candidato.Nombre" class="vote-card-photo" />
+                    }
+                    else
+                    {
+                        <div class="vote-card-photo vote-card-photo-placeholder">
+                            <i data-lucide="user" style="width: 40px; height: 40px;"></i>
+                        </div>
+                    }
+                    
+                    <h3 class="vote-card-name">@candidato.Nombre</h3>
+                    <p class="vote-card-party">@candidato.PartidoPolitico</p>
+                    
+                    @if (!string.IsNullOrEmpty(candidato.Propuestas))
+                    {
+                        <p class="vote-card-proposals">@candidato.Propuestas</p>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Submit Button -->
+        <div class="votacion-actions">
+            <button type="button" class="btn btn-primary btn-lg" id="confirmBtn" disabled onclick="openConfirmModal()">
+                <i data-lucide="check-square" style="width: 20px; height: 20px;"></i>
+                Confirmar Voto
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal-backdrop" id="confirmModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirmar Voto</h3>
+            <button type="button" class="modal-close" onclick="closeConfirmModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <div class="confirm-icon">
+                <i data-lucide="vote" style="width: 48px; height: 48px;"></i>
+            </div>
+            <h4>Estas a punto de votar por:</h4>
+            <p class="selected-candidate" id="selectedCandidateName">-</p>
+            <p class="text-muted" style="margin-top: 1rem;">
+                Una vez confirmado, tu voto no podra ser modificado.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="submitVote()">
+                <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                Confirmar Voto
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .votacion-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .votacion-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .votacion-header h1 {
+        margin: 1rem 0 0.5rem;
+    }
+    
+    .candidatos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .vote-card {
+        position: relative;
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 2rem 1.5rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        text-align: center;
+    }
+    
+    .vote-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .vote-card.selected {
+        border-color: var(--accent);
+        background: rgba(var(--accent-rgb), 0.1);
+    }
+    
+    .vote-card-check {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 32px;
+        height: 32px;
+        background: var(--accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0D1017;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all var(--transition-fast);
+    }
+    
+    .vote-card.selected .vote-card-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .vote-card-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto 1rem;
+        border: 3px solid var(--border-color);
+        transition: border-color var(--transition-fast);
+    }
+    
+    .vote-card.selected .vote-card-photo {
+        border-color: var(--accent);
+    }
+    
+    .vote-card-photo-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-panel);
+        color: var(--text-muted);
+    }
+    
+    .vote-card-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 0.25rem;
+    }
+    
+    .vote-card-party {
+        font-size: 0.9375rem;
+        color: var(--accent);
+        margin: 0;
+    }
+    
+    .vote-card-proposals {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        margin-top: 1rem;
+        line-height: 1.4;
+    }
+    
+    .votacion-actions {
+        text-align: center;
+        padding: 2rem 0;
+    }
+    
+    .confirm-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: rgba(var(--accent-rgb), 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+    }
+    
+    .selected-candidate {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin: 0.5rem 0;
+    }
+    
+    #confirmBtn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    @@media (max-width: 768px) {
+        .candidatos-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        let selectedCandidatoId = null;
+        let candidatos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Candidatos));
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+        
+        function selectCandidate(id) {
+            // Deseleccionar anterior
+            document.querySelectorAll('.vote-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Seleccionar nuevo
+            const card = document.querySelector('[data-candidato-id="' + id + '"]');
+            card.classList.add('selected');
+            
+            selectedCandidatoId = id;
+            document.getElementById('candidatoId').value = id;
+            document.getElementById('confirmBtn').disabled = false;
+        }
+        
+        function openConfirmModal() {
+            if (!selectedCandidatoId) return;
+            
+            const candidato = candidatos.find(c => c.id === selectedCandidatoId);
+            if (candidato) {
+                document.getElementById('selectedCandidateName').textContent = candidato.nombre;
+            }
+            
+            document.getElementById('confirmModal').classList.add('open');
+        }
+        
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('open');
+        }
+        
+        function submitVote() {
+            if (!selectedCandidatoId) return;
+            document.getElementById('votacionForm').submit();
+        }
+    </script>
+}

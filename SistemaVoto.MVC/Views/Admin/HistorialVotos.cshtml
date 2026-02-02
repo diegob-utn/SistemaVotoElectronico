@@ -1,0 +1,196 @@
+@model List<VotoDto>
+@{
+    ViewData["Title"] = "Historial de Votos";
+    var elecciones = ViewBag.Elecciones as List<EleccionDto> ?? new List<EleccionDto>();
+    var eleccionId = ViewBag.EleccionId as int?;
+}
+
+<div class="historial-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>
+                <i data-lucide="history" style="width: 32px; height: 32px;"></i>
+                Historial de Votos
+            </h1>
+            <p class="text-muted">Auditoria de votos anonimizados</p>
+        </div>
+        <div class="filter-controls">
+            <select id="eleccionFilter" class="form-control" onchange="filterByEleccion()">
+                <option value="">Todas las elecciones</option>
+                @foreach (var eleccion in elecciones)
+                {
+                    <option value="@eleccion.Id" selected="@(eleccionId == eleccion.Id)">@eleccion.Titulo</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(var(--accent-rgb), 0.15);">
+                <i data-lucide="check-square" style="width: 24px; height: 24px; color: var(--accent);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count</div>
+            <div class="stat-card-label">Total Votos</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15);">
+                <i data-lucide="shield-check" style="width: 24px; height: 24px; color: var(--color-success);"></i>
+            </div>
+            <div class="stat-card-value">100%</div>
+            <div class="stat-card-label">Verificados</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(85, 180, 212, 0.15);">
+                <i data-lucide="lock" style="width: 24px; height: 24px; color: var(--color-info);"></i>
+            </div>
+            <div class="stat-card-value">SHA-256</div>
+            <div class="stat-card-label">Encriptacion</div>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="alert alert-info">
+        <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+        <strong>Anonimato Garantizado:</strong> Los votos se almacenan con hash criptografico. 
+        No es posible identificar al votante, pero si verificar la integridad del voto.
+    </div>
+
+    <!-- Votes Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Hash del Voto</th>
+                        <th>Fecha/Hora</th>
+                        <th>Eleccion</th>
+                        <th>Candidato</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var voto in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <code class="hash-code" title="@voto.HashVoto">
+                                        @(voto.HashVoto.Length > 16 ? voto.HashVoto.Substring(0, 16) + "..." : voto.HashVoto)
+                                    </code>
+                                </td>
+                                <td>@voto.FechaVoto.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>@(voto.EleccionTitulo ?? $"#{voto.EleccionId}")</td>
+                                <td>@(voto.CandidatoNombre ?? $"#{voto.CandidatoId}")</td>
+                                <td>
+                                    <span class="badge badge-success">
+                                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                                        Verificado
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                                <i data-lucide="inbox" style="width: 48px; height: 48px; opacity: 0.3; display: block; margin: 0 auto 1rem;"></i>
+                                No hay votos registrados
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .historial-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+    }
+    
+    .filter-controls {
+        min-width: 250px;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .hash-code {
+        font-family: 'Monaco', 'Consolas', monospace;
+        font-size: 0.85rem;
+        background: var(--bg-secondary);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .hash-code:hover {
+        background: var(--accent);
+        color: #0D1017;
+    }
+    
+    .alert-info {
+        background: rgba(85, 180, 212, 0.1);
+        border: 1px solid rgba(85, 180, 212, 0.3);
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+    }
+    
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-controls {
+            width: 100%;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+        
+        function filterByEleccion() {
+            var eleccionId = document.getElementById('eleccionFilter').value;
+            if (eleccionId) {
+                window.location.href = '/Admin/HistorialVotos?eleccionId=' + eleccionId;
+            } else {
+                window.location.href = '/Admin/HistorialVotos';
+            }
+        }
+    </script>
+}

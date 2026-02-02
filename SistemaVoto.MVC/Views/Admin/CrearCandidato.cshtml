@@ -1,0 +1,116 @@
+@model CandidatoViewModel
+@{
+    ViewData["Title"] = "Crear Candidato";
+    var elecciones = ViewBag.Elecciones as List<EleccionDto> ?? new List<EleccionDto>();
+}
+
+<div class="form-container">
+    <div class="form-card glass-card">
+        <div class="form-header">
+            <a href="/Admin/Candidatos" class="btn btn-ghost btn-sm">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+                Volver
+            </a>
+            <h1>
+                <i data-lucide="user-plus" style="width: 32px; height: 32px;"></i>
+                Registrar Candidato
+            </h1>
+            <p class="text-muted">Agregue un nuevo candidato al proceso electoral</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form asp-action="CrearCandidato" method="post">
+            <div class="form-group">
+                <label asp-for="EleccionId" class="form-label">
+                    <i data-lucide="vote" style="width: 16px; height: 16px;"></i>
+                    Eleccion
+                </label>
+                <select asp-for="EleccionId" class="form-control">
+                    <option value="">Seleccione una eleccion...</option>
+                    @foreach (var eleccion in elecciones)
+                    {
+                        <option value="@eleccion.Id" selected="@(Model.EleccionId == eleccion.Id)">@eleccion.Titulo</option>
+                    }
+                </select>
+                <span asp-validation-for="EleccionId" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Nombre" class="form-label">
+                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                    Nombre del Candidato
+                </label>
+                <input asp-for="Nombre" class="form-control" placeholder="Nombre completo" />
+                <span asp-validation-for="Nombre" class="text-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="PartidoPolitico" class="form-label">
+                    <i data-lucide="flag" style="width: 16px; height: 16px;"></i>
+                    Partido Politico / Lista
+                </label>
+                <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido o lista" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FotoUrl" class="form-label">
+                    <i data-lucide="image" style="width: 16px; height: 16px;"></i>
+                    URL de Foto (Opcional)
+                </label>
+                <input asp-for="FotoUrl" class="form-control" type="url" placeholder="https://..." />
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                    Registrar Candidato
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .form-card {
+        padding: 2.5rem;
+    }
+    
+    .form-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .form-header h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 1rem 0 0.5rem;
+    }
+    
+    .form-actions {
+        margin-top: 2rem;
+        text-align: center;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

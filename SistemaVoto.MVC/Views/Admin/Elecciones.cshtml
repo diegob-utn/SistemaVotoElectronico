@@ -1,0 +1,185 @@
+@model List<EleccionDto>
+@{
+    ViewData["Title"] = "Elecciones";
+}
+
+<div class="elecciones-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>
+                <i data-lucide="vote" style="width: 32px; height: 32px;"></i>
+                Gestion de Elecciones
+            </h1>
+            <p class="text-muted">Administre los procesos electorales del sistema</p>
+        </div>
+        <a href="/Admin/CrearEleccion" class="btn btn-primary">
+            <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+            Nueva Eleccion
+        </a>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(var(--accent-rgb), 0.15);">
+                <i data-lucide="vote" style="width: 24px; height: 24px; color: var(--accent);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count</div>
+            <div class="stat-card-label">Total Elecciones</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15);">
+                <i data-lucide="check-circle" style="width: 24px; height: 24px; color: var(--color-success);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count(e => e.Estado == "Activa")</div>
+            <div class="stat-card-label">Activas</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(85, 180, 212, 0.15);">
+                <i data-lucide="clock" style="width: 24px; height: 24px; color: var(--color-info);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count(e => e.Estado == "Pendiente")</div>
+            <div class="stat-card-label">Pendientes</div>
+        </div>
+    </div>
+
+    <!-- Elections Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Titulo</th>
+                        <th>Tipo</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Escanos</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var eleccion in Model)
+                        {
+                            var badgeClass = eleccion.Estado switch
+                            {
+                                "Activa" => "badge-success",
+                                "Pendiente" => "badge-warning",
+                                "Finalizada" => "badge-info",
+                                _ => "badge-accent"
+                            };
+                            <tr>
+                                <td><strong>@eleccion.Titulo</strong></td>
+                                <td>@eleccion.Tipo</td>
+                                <td>@eleccion.FechaInicioUtc.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@eleccion.FechaFinUtc.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@eleccion.NumEscanos</td>
+                                <td><span class="badge @badgeClass">@eleccion.Estado</span></td>
+                                <td>
+                                    <div class="actions-group">
+                                        <a href="/Admin/EditarEleccion/@eleccion.Id" class="btn btn-ghost btn-sm" title="Editar">
+                                            <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                                        </a>
+                                        <a href="/Admin/Candidatos?eleccionId=@eleccion.Id" class="btn btn-ghost btn-sm" title="Candidatos">
+                                            <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                                        </a>
+                                        <a href="/Resultados/@eleccion.Id" class="btn btn-ghost btn-sm" title="Resultados">
+                                            <i data-lucide="bar-chart" style="width: 16px; height: 16px;"></i>
+                                        </a>
+                                        <form asp-action="EliminarEleccion" method="post" style="display: inline;"
+                                              onsubmit="return confirm('¿Seguro que desea eliminar esta eleccion?')">
+                                            <input type="hidden" name="id" value="@eleccion.Id" />
+                                            <button type="submit" class="btn btn-ghost btn-sm" title="Eliminar">
+                                                <i data-lucide="trash-2" style="width: 16px; height: 16px; color: var(--color-error);"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                                No hay elecciones registradas
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .elecciones-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .actions-group {
+        display: flex;
+        gap: 0.25rem;
+    }
+    
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

@@ -1,0 +1,227 @@
+@model List<UsuarioDto>
+@{
+    ViewData["Title"] = "Gestion de Usuarios";
+}
+
+<div class="usuarios-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>Gestion de Usuarios</h1>
+            <p class="text-muted">Administra los usuarios del sistema</p>
+        </div>
+        <div class="page-actions">
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
+                Nuevo Usuario
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar glass-card" style="margin-bottom: 1.5rem;">
+        <div class="filter-group">
+            <label class="form-label">Buscar</label>
+            <input type="text" class="form-input" id="searchInput" placeholder="Nombre o email..." onkeyup="filterTable()">
+        </div>
+        <div class="filter-group">
+            <label class="form-label">Rol</label>
+            <select class="form-select" id="roleFilter" onchange="filterTable()">
+                <option value="">Todos</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Votante">Votante</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="form-label">Estado</label>
+            <select class="form-select" id="statusFilter" onchange="filterTable()">
+                <option value="">Todos</option>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var usuario in Model)
+                        {
+                            <tr data-role="@usuario.RolNombre" data-status="@usuario.Activo.ToString().ToLower()">
+                                <td>@usuario.Id</td>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar">
+                                            @usuario.NombreCompleto.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <span>@usuario.NombreCompleto</span>
+                                    </div>
+                                </td>
+                                <td>@usuario.Email</td>
+                                <td>@(usuario.NombreUsuario ?? "-")</td>
+                                <td>
+                                    @{
+                                        var rolBadge = usuario.RolNombre == "Administrador" ? "badge-accent" : "badge-info";
+                                    }
+                                    <span class="badge @rolBadge">@(usuario.RolNombre ?? "Sin rol")</span>
+                                </td>
+                                <td>
+                                    @if (usuario.Activo)
+                                    {
+                                        <span class="badge badge-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-error">Inactivo</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-ghost btn-sm" title="Editar" onclick="editUser(@usuario.Id)">
+                                            <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        <button class="btn btn-ghost btn-sm" title="@(usuario.Activo ? "Desactivar" : "Activar")" onclick="toggleUserStatus(@usuario.Id, @usuario.Activo.ToString().ToLower())">
+                                            <i data-lucide="@(usuario.Activo ? "user-x" : "user-check")" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                <i data-lucide="users" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <p>No hay usuarios registrados</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .usuarios-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-header h1 {
+        margin: 0;
+    }
+    
+    .filters-bar {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+        color: #0D1017;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+    }
+    
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .filters-bar {
+            flex-direction: column;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+        
+        function filterTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const role = row.dataset.role || '';
+                const status = row.dataset.status || '';
+                
+                const matchSearch = text.includes(search);
+                const matchRole = !roleFilter || role === roleFilter;
+                const matchStatus = !statusFilter || status === statusFilter;
+                
+                row.style.display = matchSearch && matchRole && matchStatus ? '' : 'none';
+            });
+        }
+        
+        function openCreateModal() {
+            alert('Funcionalidad de crear usuario - Por implementar');
+        }
+        
+        function editUser(userId) {
+            alert('Editar usuario ' + userId + ' - Por implementar');
+        }
+        
+        function toggleUserStatus(userId, currentStatus) {
+            const action = currentStatus ? 'desactivar' : 'activar';
+            if (confirm('Seguro que deseas ' + action + ' este usuario?')) {
+                alert('Cambiar estado de usuario ' + userId + ' - Por implementar');
+            }
+        }
+    </script>
+}

@@ -1,0 +1,201 @@
+@model List<IdentityUserViewModel>
+@{
+    ViewData["Title"] = "Usuarios del Sistema";
+}
+
+<div class="usuarios-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1>
+                <i data-lucide="users" style="width: 32px; height: 32px;"></i>
+                Usuarios del Sistema
+            </h1>
+            <p class="text-muted">Gestion de usuarios de ASP.NET Identity</p>
+        </div>
+        <a href="/Admin/RegistrarUsuario" class="btn btn-primary">
+            <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
+            Nuevo Usuario
+        </a>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(var(--accent-rgb), 0.15);">
+                <i data-lucide="users" style="width: 24px; height: 24px; color: var(--accent);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count</div>
+            <div class="stat-card-label">Total Usuarios</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(163, 122, 204, 0.15);">
+                <i data-lucide="shield" style="width: 24px; height: 24px; color: var(--color-purple);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count(u => u.Roles.Contains("Administrador"))</div>
+            <div class="stat-card-label">Administradores</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15);">
+                <i data-lucide="user" style="width: 24px; height: 24px; color: var(--color-success);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Count(u => u.Roles.Contains("Usuario"))</div>
+            <div class="stat-card-label">Votantes</div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar">
+                                        @user.Email.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <span>@user.Email</span>
+                                </div>
+                            </td>
+                            <td>
+                                @foreach (var role in user.Roles)
+                                {
+                                    <span class="badge @(role == "Administrador" ? "badge-accent" : "badge-info")">
+                                        @role
+                                    </span>
+                                }
+                                @if (!user.Roles.Any())
+                                {
+                                    <span class="badge badge-muted">Sin rol</span>
+                                }
+                            </td>
+                            <td>
+                                @if (user.EmailConfirmed)
+                                {
+                                    <span class="badge badge-success">
+                                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                                        Confirmado
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">Pendiente</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <form asp-action="EliminarUsuario" method="post" style="display: inline;"
+                                          onsubmit="return confirm('¿Seguro que desea eliminar este usuario?')">
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        <button type="submit" class="btn btn-ghost btn-sm" title="Eliminar">
+                                            <i data-lucide="trash-2" style="width: 16px; height: 16px; color: var(--color-error);"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .usuarios-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #0D1017;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .actions-cell {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

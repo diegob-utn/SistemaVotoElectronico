@@ -1,22 +1,317 @@
+/* ============================================
+   SISTEMA VOTO ELECTRÓNICO - AYU THEME
+   ============================================ */
+
+/* ==========================================
+   VARIABLES - AYU LIGHT (Default)
+   ========================================== */
+:root,
+:root[data-theme="light"] {
+  /* UI Base */
+  --bg-primary: #F8F9FA;
+  --bg-secondary: #FCFCFC;
+  --bg-panel: #F3F4F5;
+  --bg-line: #E8E9EA;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  
+  /* Texto */
+  --text-primary: #5C6166;
+  --text-secondary: #787B80;
+  --text-muted: #8A9199;
+  
+  /* Acentos */
+  --accent: #FFAA33;
+  --accent-hover: #F2AE49;
+  --accent-rgb: 255, 170, 51;
+  
+  /* Sintaxis/UI Colors */
+  --color-info: #55B4D4;
+  --color-success: #86B300;
+  --color-warning: #FA8D3E;
+  --color-error: #E65050;
+  --color-link: #399EE6;
+  --color-purple: #A37ACC;
+  
+  /* Selección */
+  --selection-active: #B3D4F2;
+  --selection-inactive: #D9E8F7;
+  
+  /* Git Status */
+  --git-added: #6CBF43;
+  --git-modified: #478ACC;
+  --git-removed: #FF7383;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  
+  /* Borders & Shadows */
+  --border-color: #D9DCDF;
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+}
+
+/* ==========================================
+   VARIABLES - AYU DARK
+   ========================================== */
+:root[data-theme="dark"] {
+  /* UI Base */
+  --bg-primary: #0B0E14;
+  --bg-secondary: #0D1017;
+  --bg-panel: #0F131A;
+  --bg-line: #11151C;
+  --bg-card: rgba(15, 19, 26, 0.8);
+  
+  /* Texto */
+  --text-primary: #BFBDB6;
+  --text-secondary: #ACB6BF;
+  --text-muted: #565B66;
+  
+  /* Acentos */
+  --accent: #E6B450;
+  --accent-hover: #FFB454;
+  --accent-rgb: 230, 180, 80;
+  
+  /* Sintaxis/UI Colors */
+  --color-info: #39BAE6;
+  --color-success: #AAD94C;
+  --color-warning: #FF8F40;
+  --color-error: #D95757;
+  --color-link: #59C2FF;
+  --color-purple: #D2A6FF;
+  
+  /* Selección */
+  --selection-active: #2D5A8F;
+  --selection-inactive: #1A3A5A;
+  
+  /* Git Status */
+  --git-added: #7FD962;
+  --git-modified: #73B8FF;
+  --git-removed: #F26D78;
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(15, 19, 26, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  
+  /* Borders & Shadows */
+  --border-color: #1A1F29;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================
+   BASE STYLES
+   ========================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+  font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
-  margin-bottom: 60px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* ==========================================
+   TYPOGRAPHY
+   ========================================== */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+/* ==========================================
+   LAYOUT - MAIN CONTAINER
+   ========================================== */
+.main-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.content-area {
+  flex: 1;
+  padding: 2rem;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ==========================================
+   GLASSMORPHISM CARD
+   ========================================== */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--glass-shadow);
+  padding: 1.5rem;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ==========================================
+   UTILITIES
+   ========================================== */
+.text-accent { color: var(--accent); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+.text-info { color: var(--color-info); }
+.text-muted { color: var(--text-muted); }
+
+.bg-accent { background-color: var(--accent); }
+.bg-panel { background-color: var(--bg-panel); }
+.bg-card { background-color: var(--bg-card); }
+
+/* Spacing */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+
+/* Flex utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+
+/* Grid */
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.4s ease forwards; }
+.animate-slideIn { animation: slideIn 0.4s ease forwards; }
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* Stagger animation delays */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+
+/* ==========================================
+   SCROLLBAR STYLING
+   ========================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ==========================================
+   SELECTION
+   ========================================== */
+::selection {
+  background: var(--selection-active);
+  color: var(--text-primary);
 }

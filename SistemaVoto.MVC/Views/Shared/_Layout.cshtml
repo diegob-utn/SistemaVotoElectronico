@@ -1,50 +1,103 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SistemaVoto.MVC</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <meta name="description" content="Sistema de Voto Electrónico - Plataforma segura y auditable" />
+    <title>@ViewData["Title"] - Sistema Voto Electrónico</title>
+    
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SistemaVoto.MVC.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    
+    <!-- Theme Toggle (early load to prevent flash) -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('sistemavoto-theme');
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SistemaVoto.MVC</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <i data-lucide="vote" style="width: 24px; height: 24px;"></i>
+            Sistema Voto
+        </a>
+        
+        <ul class="navbar-menu">
+            <li><a href="/" class="navbar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">Inicio</a></li>
+            <li><a href="/Elecciones" class="navbar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Elecciones" ? "active" : "")">Elecciones</a></li>
+            @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Administrador"))
+            {
+                <li class="dropdown">
+                    <a href="#" class="navbar-link dropdown-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : "")">
+                        Admin <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/Admin/Dashboard"><i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i> Dashboard</a></li>
+                        <li><a href="/Admin/Elecciones"><i data-lucide="vote" style="width: 16px; height: 16px;"></i> Elecciones</a></li>
+                        <li><a href="/Admin/Candidatos"><i data-lucide="users" style="width: 16px; height: 16px;"></i> Candidatos</a></li>
+                        <li><a href="/Admin/UsuariosIdentity"><i data-lucide="user-cog" style="width: 16px; height: 16px;"></i> Usuarios</a></li>
+                        <li><a href="/Admin/HistorialVotos"><i data-lucide="history" style="width: 16px; height: 16px;"></i> Historial Votos</a></li>
                     </ul>
-                    <partial name="_LoginPartial" />
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SistemaVoto.MVC - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                </li>
+            }
+        </ul>
+        
+        <div class="navbar-actions">
+            <!-- Theme Toggle -->
+            <button class="theme-toggle" type="button" title="Cambiar tema" aria-label="Cambiar tema">
+                <i data-lucide="sun" class="icon-sun" style="width: 20px; height: 20px;"></i>
+                <i data-lucide="moon" class="icon-moon" style="width: 20px; height: 20px;"></i>
+            </button>
+            
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <span class="text-muted" style="margin-right: 0.5rem;">@User.Identity.Name</span>
+                <a href="/Auth/Logout" class="btn btn-outline btn-sm">Cerrar Sesión</a>
+            }
+            else
+            {
+                <a href="/Auth/Login" class="btn btn-primary btn-sm">Iniciar Sesión</a>
+            }
         </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-area">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer style="padding: 2rem; text-align: center; color: var(--text-muted); border-top: 1px solid var(--border-color);">
+        <p>&copy; @DateTime.Now.Year - Sistema de Voto Electrónico | 
+            <a href="/Privacy">Privacidad</a> | 
+            <a href="/Terms">Términos</a>
+        </p>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Scripts -->
+    <script src="~/js/theme-toggle.js" asp-append-version="true"></script>
+    <script>
+        // Inicializar Lucide icons
+        lucide.createIcons();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

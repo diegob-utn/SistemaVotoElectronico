@@ -1,0 +1,118 @@
+@model EleccionDto
+@{
+    ViewData["Title"] = "Voto Confirmado";
+}
+
+<div class="confirmacion-container">
+    <div class="confirmacion-card glass-card animate-fadeIn">
+        <div class="success-icon">
+            <i data-lucide="check-circle" style="width: 64px; height: 64px;"></i>
+        </div>
+        
+        <h1>Voto Registrado</h1>
+        <p class="text-secondary">Tu voto ha sido registrado exitosamente y de forma anonima.</p>
+        
+        @if (Model != null)
+        {
+            <div class="election-info">
+                <strong>@Model.Titulo</strong>
+                <span>@Model.FechaFinUtc.ToString("dd MMMM yyyy")</span>
+            </div>
+        }
+        
+        <div class="info-box">
+            <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+            <p>Tu voto ha sido encriptado y almacenado de forma segura. No se puede rastrear tu identidad a partir del voto registrado.</p>
+        </div>
+        
+        <div class="confirmacion-actions">
+            <a href="/Elecciones" class="btn btn-primary">
+                <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                Ver Elecciones
+            </a>
+            @if (Model != null && Model.Estado == "Finalizada")
+            {
+                <a href="/Resultados/@Model.Id" class="btn btn-secondary">
+                    <i data-lucide="bar-chart" style="width: 18px; height: 18px;"></i>
+                    Ver Resultados
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .confirmacion-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        padding: 2rem;
+    }
+    
+    .confirmacion-card {
+        max-width: 500px;
+        text-align: center;
+        padding: 3rem;
+    }
+    
+    .success-icon {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        background: rgba(134, 179, 0, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-success);
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .confirmacion-card h1 {
+        margin: 0 0 0.5rem;
+        color: var(--color-success);
+    }
+    
+    .election-info {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: var(--bg-panel);
+        border-radius: var(--border-radius-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .info-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        text-align: left;
+        padding: 1rem;
+        background: rgba(85, 180, 212, 0.1);
+        border-radius: var(--border-radius-sm);
+        margin: 1.5rem 0;
+        color: var(--color-info);
+    }
+    
+    .info-box p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
+    
+    .confirmacion-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

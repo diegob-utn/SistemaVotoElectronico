@@ -1,0 +1,291 @@
+@model SistemaVoto.MVC.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Sistema Voto Electrónico</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    
+    <script>
+        (function() {
+            var theme = localStorage.getItem('sistemavoto-theme');
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-panel) 100%);
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .login-logo-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            border-radius: 12px;
+            color: #0D1017;
+        }
+        
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9375rem;
+        }
+        
+        .login-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        
+        .form-input-icon {
+            padding-left: 2.75rem;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        
+        .theme-toggle-corner {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+        }
+        
+        .error-alert {
+            background: rgba(230, 80, 80, 0.1);
+            border: 1px solid var(--color-error);
+            border-radius: var(--border-radius-sm);
+            padding: 0.875rem 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--color-error);
+        }
+        
+        .error-alert i {
+            flex-shrink: 0;
+        }
+        
+        /* Animaciones */
+        .login-card {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <!-- Theme Toggle -->
+        <button class="theme-toggle theme-toggle-corner" type="button" title="Cambiar tema">
+            <i data-lucide="sun" class="icon-sun" style="width: 20px; height: 20px;"></i>
+            <i data-lucide="moon" class="icon-moon" style="width: 20px; height: 20px;"></i>
+        </button>
+        
+        <div class="login-container">
+            <div class="login-card">
+                <!-- Header -->
+                <div class="login-header">
+                    <div class="login-logo">
+                        <div class="login-logo-icon">
+                            <i data-lucide="vote" style="width: 28px; height: 28px;"></i>
+                        </div>
+                    </div>
+                    <h1 class="login-title">Bienvenido</h1>
+                    <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
+                </div>
+                
+                <!-- Error Message -->
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error-alert">
+                        <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+                        <span>@Model.ErrorMessage</span>
+                    </div>
+                }
+                
+                <!-- Login Form -->
+                <form asp-action="Login" method="post" class="login-form">
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    
+                    <div class="form-group">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="mail" class="input-icon" style="width: 18px; height: 18px;"></i>
+                            <input asp-for="Email" 
+                                   class="form-input form-input-icon" 
+                                   type="email" 
+                                   placeholder="correo@ejemplo.com"
+                                   autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="form-error"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label asp-for="Password" class="form-label">Contraseña</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="lock" class="input-icon" style="width: 18px; height: 18px;"></i>
+                            <input asp-for="Password" 
+                                   class="form-input form-input-icon" 
+                                   type="password" 
+                                   id="passwordInput"
+                                   placeholder="••••••••"
+                                   autocomplete="current-password"
+                                   style="padding-right: 3rem;" />
+                            <button type="button" class="password-toggle" onclick="togglePassword()">
+                                <i data-lucide="eye" id="eyeIcon" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="form-error"></span>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary login-btn">
+                        Iniciar Sesión
+                    </button>
+                </form>
+                
+                <div class="login-divider">Sistema de Voto Electrónico</div>
+                
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.8125rem;">
+                    Plataforma segura y auditable para procesos electorales
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="~/js/theme-toggle.js" asp-append-version="true"></script>
+    <script>
+        lucide.createIcons();
+        
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon = document.getElementById('eyeIcon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

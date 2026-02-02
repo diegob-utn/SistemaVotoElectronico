@@ -1,0 +1,43 @@
+# Dockerfile para SistemaVoto.MVC - Deploy en Render
+# Multi-stage build para optimizar el tamano de la imagen
+
+# Etapa 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copiar archivos de proyecto y restaurar dependencias
+COPY ["SistemaVoto.MVC/SistemaVoto.MVC.csproj", "SistemaVoto.MVC/"]
+RUN dotnet restore "SistemaVoto.MVC/SistemaVoto.MVC.csproj"
+
+# Copiar todo el codigo fuente
+COPY SistemaVoto.MVC/. SistemaVoto.MVC/
+
+# Build de la aplicacion
+WORKDIR /src/SistemaVoto.MVC
+RUN dotnet build "SistemaVoto.MVC.csproj" -c Release -o /app/build
+
+# Etapa 2: Publish
+FROM build AS publish
+RUN dotnet publish "SistemaVoto.MVC.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Etapa 3: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Configurar usuario no-root para seguridad
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+# Copiar artefactos publicados
+COPY --from=publish /app/publish .
+
+# Variables de entorno
+ENV ASPNETCORE_URLS=http://+:10000
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV Api__BaseUrl=https://sistemavotoelectronico.onrender.com
+
+# Puerto expuesto (Render usa 10000 por defecto)
+EXPOSE 10000
+
+# Punto de entrada
+ENTRYPOINT ["dotnet", "SistemaVoto.MVC.dll"]
