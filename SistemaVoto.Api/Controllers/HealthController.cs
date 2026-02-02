@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SistemaVoto.Modelos;
 
-namespace SistemaVoto.Api.Controllers
+namespace SistemaVoto.Data.Controllers
 {
     [ApiController]
     public class HealthController : ControllerBase

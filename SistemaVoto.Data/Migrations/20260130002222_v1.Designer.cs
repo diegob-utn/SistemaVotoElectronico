@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SistemaVoto.Api.Data;
+using SistemaVoto.Data.Data;
 
 #nullable disable
 
-namespace SistemaVoto.Api.Migrations
+namespace SistemaVoto.Data.Migrations
 {
     [DbContext(typeof(SistemaVotoDbContext))]
     [Migration("20260130002222_v1")]

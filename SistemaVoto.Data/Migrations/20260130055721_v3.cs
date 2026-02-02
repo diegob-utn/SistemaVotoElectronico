@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace SistemaVoto.Api.Migrations
+namespace SistemaVoto.Data.Migrations
 {
     /// <inheritdoc />
     public partial class v3 : Migration

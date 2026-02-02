@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SistemaVoto.Api.Data;
 using SistemaVoto.Modelos;
+using SistemaVoto.Data.Data;
 
 namespace SistemaVoto.Api.Controllers
 {

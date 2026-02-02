@@ -5,22 +5,22 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SistemaVoto.Api.Data;
+using SistemaVoto.Data.Data;
 
 #nullable disable
 
-namespace SistemaVoto.Api.Migrations
+namespace SistemaVoto.Data.Migrations
 {
     [DbContext(typeof(SistemaVotoDbContext))]
-    [Migration("20260130055721_v3")]
-    partial class v3
+    [Migration("20260202020927_modelos-update")]
+    partial class modelosupdate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.22")
+                .HasAnnotation("ProductVersion", "8.0.23")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -238,7 +238,6 @@ namespace SistemaVoto.Api.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Descripcion")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Nombre")
@@ -304,7 +303,6 @@ namespace SistemaVoto.Api.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("NombreUsuario")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PasswordHash")

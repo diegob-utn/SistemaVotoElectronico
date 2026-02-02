@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace SistemaVoto.Api.Migrations
+namespace SistemaVoto.Data.Migrations
 {
     public partial class v2_ajustada : Migration
     {

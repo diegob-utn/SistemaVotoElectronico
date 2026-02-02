@@ -3,9 +3,9 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using SistemaVoto.Api.Data;
 using SistemaVoto.Api.Dtos;
 using SistemaVoto.Api.Hubs;
+using SistemaVoto.Data.Data;
 using SistemaVoto.Modelos;
 
 namespace SistemaVoto.Api.Controllers

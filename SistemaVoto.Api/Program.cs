@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SistemaVoto.Api.Data;
+using SistemaVoto.Data.Data;
 
 namespace SistemaVoto.Api
 {

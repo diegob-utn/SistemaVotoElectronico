@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaVoto.Modelos;
 
-namespace SistemaVoto.Api.Data
+namespace SistemaVoto.Data.Data
 {
     public class SistemaVotoDbContext : DbContext
     {
