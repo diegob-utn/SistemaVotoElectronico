@@ -15,7 +15,7 @@ namespace SistemaVoto.Modelos
 
         [Required, StringLength(50)]
         public string Nombre { get; set; } = null!; // "Administrador", "Votante"
-        public string Descripcion { get; set; } = null!;
+        public string? Descripcion { get; set; } = null!;
         public bool Activo { get; set; } = true;
 
         [JsonIgnore]

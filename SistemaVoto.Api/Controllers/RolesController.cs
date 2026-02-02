@@ -27,7 +27,7 @@ namespace SistemaVoto.Api.Controllers
             return Ok(ApiResult<Rol>.Ok(rol));
         }
 
-        //  DTO Actualizado: Incluye Descripcion y Activo
+        // ✅ MODIFICADO: Agregados Descripcion y Activo (opcionales)
         public record CrearRolRequest(string Nombre, string? Descripcion, bool? Activo);
 
         [HttpPost]
@@ -40,47 +40,19 @@ namespace SistemaVoto.Api.Controllers
             var exists = await _db.Roles.AnyAsync(r => r.Nombre == nombre);
             if (exists) return Conflict(ApiResult<object>.Fail("Ya existe un rol con ese nombre."));
 
-            //  Mapeo de los nuevos campos
+            // ✅ MODIFICADO: Asignación de los nuevos campos
             var rol = new Rol
             {
                 Nombre = nombre,
                 Descripcion = req.Descripcion,
-                Activo = req.Activo ?? true // Por defecto 'true' al crear
+                // Si no envían 'Activo', asumimos true por defecto
+                Activo = req.Activo ?? true
             };
 
             _db.Roles.Add(rol);
             await _db.SaveChangesAsync();
 
             return Ok(ApiResult<Rol>.Ok(rol, "Rol creado."));
-        }
-
-        // Nuevo Endpoint: PUT para editar roles
-        public record UpdateRolRequest(string Nombre, string? Descripcion, bool? Activo);
-
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Editar(int id, [FromBody] UpdateRolRequest req)
-        {
-            var rol = await _db.Roles.FindAsync(id);
-            if (rol is null) return NotFound(ApiResult<object>.Fail("Rol no encontrado."));
-
-            // Si se envía nombre, validamos duplicados (excepto si es el mismo)
-            if (!string.IsNullOrWhiteSpace(req.Nombre))
-            {
-                var nombre = req.Nombre.Trim();
-                if (nombre != rol.Nombre)
-                {
-                    var exists = await _db.Roles.AnyAsync(r => r.Nombre == nombre);
-                    if (exists) return Conflict(ApiResult<object>.Fail("Ya existe otro rol con ese nombre."));
-                    rol.Nombre = nombre;
-                }
-            }
-
-            // Actualizamos campos opcionales si vienen en el JSON
-            if (req.Descripcion != null) rol.Descripcion = req.Descripcion;
-            if (req.Activo.HasValue) rol.Activo = req.Activo.Value;
-
-            await _db.SaveChangesAsync();
-            return Ok(ApiResult<Rol>.Ok(rol, "Rol actualizado."));
         }
     }
 }
