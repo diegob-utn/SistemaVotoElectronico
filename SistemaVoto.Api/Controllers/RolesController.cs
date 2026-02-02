@@ -54,5 +54,30 @@ namespace SistemaVoto.Api.Controllers
 
             return Ok(ApiResult<Rol>.Ok(rol, "Rol creado."));
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] CrearRolRequest req)
+        {
+            var rol = await _db.Roles.FindAsync(id);
+            if (rol == null) return NotFound(ApiResult<object>.Fail("Rol no existe."));
+            if (string.IsNullOrWhiteSpace(req.Nombre))
+                return BadRequest(ApiResult<object>.Fail("Nombre de rol es requerido."));
+
+            rol.Nombre = req.Nombre.Trim();
+            rol.Descripcion = req.Descripcion;
+            rol.Activo = req.Activo ?? true;
+            await _db.SaveChangesAsync();
+            return Ok(ApiResult<Rol>.Ok(rol, "Rol actualizado."));
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var rol = await _db.Roles.FindAsync(id);
+            if (rol == null) return NotFound(ApiResult<object>.Fail("Rol no existe."));
+            _db.Roles.Remove(rol);
+            await _db.SaveChangesAsync();
+            return Ok(ApiResult<object>.Ok(null, "Rol eliminado."));
+        }
     }
 }

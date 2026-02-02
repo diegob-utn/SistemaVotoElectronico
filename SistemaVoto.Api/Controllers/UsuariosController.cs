@@ -60,7 +60,8 @@ public class UsuariosController : ControllerBase
             NombreCompleto = req.NombreCompleto.Trim(),
             Email = email,
             PasswordHash = req.PasswordHash,
-            RolId = req.RolId
+            RolId = req.RolId,
+            Activo = true
         };
 
         _db.Usuarios.Add(user);
@@ -84,6 +85,18 @@ public class UsuariosController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(ApiResult<object>.Ok(new { user.Id, user.RolId }, "Rol actualizado."));
+    }
+
+    [HttpPatch("{id:int}/estado")]
+    public async Task<IActionResult> ToggleEstado(int id)
+    {
+        var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null) return NotFound(ApiResult<object>.Fail("Usuario no existe."));
+
+        user.Activo = !user.Activo;
+        await _db.SaveChangesAsync();
+
+        return Ok(ApiResult<object>.Ok(new { user.Id, user.Activo }, "Estado de usuario actualizado."));
     }
 
     [HttpDelete("{id:int}")]

@@ -13,32 +13,10 @@ namespace SistemaVoto.Api
 
             builder.Services.AddDbContext<SistemaVotoDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DbContext.postgres-render")
-                ?? throw new InvalidOperationException("Connection string 'DbContext.postgres-render' not found.")));
+                ?? throw new InvalidOperationException("Connection string 'DbContext.postgres-render' not found."))); // Corregido el mensaje de error para coincidir con la clave
 
             builder.Services.AddControllers();
-
-            // JWT Configuration
-            var keyStr = builder.Configuration["Jwt:Key"] ?? "SecretKey_SuperSegura_Para_Desarrollo_123456";
-            var key = System.Text.Encoding.UTF8.GetBytes(keyStr);
-
-            builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.RequireHttpsMetadata = false;
-                options.SaveToken = true;
-                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            });
-
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -52,6 +30,7 @@ namespace SistemaVoto.Api
                     p.WithOrigins(
                         "http://localhost:5500",
                         "http://127.0.0.1:5500"
+                    // aqu� luego pones el dominio donde hostees el html (vercel/netlify/etc)
                     )
                     .AllowAnyHeader()
                     .AllowAnyMethod()
@@ -60,13 +39,14 @@ namespace SistemaVoto.Api
 
 
             var app = builder.Build();
+            // ...
 
             app.MapHub<SistemaVoto.Api.Hubs.VotacionHub>("/hubs/votacion");
 
             app.UseCors("AllowDashboard");
 
             // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment()) 
+            //if (app.Environment.IsDevelopment()) // Comentado para ver Swagger en Producci�n/Render si lo deseas
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
@@ -74,14 +54,14 @@ namespace SistemaVoto.Api
 
             app.UseHttpsRedirection();
 
-            app.UseAuthentication(); // JWT Middleare
             app.UseAuthorization();
 
             app.MapControllers();
 
             // =================================================================
-            //  SOLUCIÓN: APLICAR MIGRACIONES AUTOMÁTICAMENTE AL INICIAR
+            //  SOLUCI�N: APLICAR MIGRACIONES AUTOM�TICAMENTE AL INICIAR
             // =================================================================
+            // Esto crea las tablas en Render si no existen.
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -95,7 +75,8 @@ namespace SistemaVoto.Api
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($" Error crítico al migrar la base de datos: {ex.Message}");
+                    Console.WriteLine($" Error cr�tico al migrar la base de datos: {ex.Message}");
+                    // Opcional: throw; si quieres que la app se detenga si falla la DB
                 }
             }
             // =================================================================

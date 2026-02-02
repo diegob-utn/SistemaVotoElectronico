@@ -17,7 +17,8 @@ namespace SistemaVoto.Modelos
         [Required, StringLength(120)]
         public string Nombre { get; set; } = null!;
 
-        public string? PartidoPolitico { get; set; } // opcional
+        [Required]
+        public string PartidoPolitico { get; set; } = null!;
         public string? FotoUrl { get; set; }
         public string? Propuestas { get; set; }
 
@@ -31,6 +32,5 @@ namespace SistemaVoto.Modelos
 
         [JsonIgnore]
         public Lista? Lista { get; set; }
-        public string Partido { get; set; }
     }
 }

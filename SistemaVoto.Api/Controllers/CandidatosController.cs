@@ -29,7 +29,7 @@ namespace SistemaVoto.Api.Controllers
 
         public record CrearCandidatoRequest(
             string Nombre,
-            string? PartidoPolitico,
+            string PartidoPolitico,
             string? FotoUrl,
             string? Propuestas,
             int? ListaId
@@ -43,6 +43,9 @@ namespace SistemaVoto.Api.Controllers
 
             if (string.IsNullOrWhiteSpace(req.Nombre))
                 return BadRequest(ApiResult<object>.Fail("Nombre es requerido."));
+
+            if (string.IsNullOrWhiteSpace(req.PartidoPolitico))
+                return BadRequest(ApiResult<object>.Fail("PartidoPolitico es requerido."));
 
             if (eleccion.Tipo == TipoEleccion.Plancha)
             {
@@ -75,7 +78,7 @@ namespace SistemaVoto.Api.Controllers
 
         public record UpdateCandidatoRequest(
             string Nombre,
-            string? PartidoPolitico,
+            string PartidoPolitico,
             string? FotoUrl,
             string? Propuestas,
             int? ListaId
@@ -92,6 +95,9 @@ namespace SistemaVoto.Api.Controllers
 
             if (string.IsNullOrWhiteSpace(req.Nombre))
                 return BadRequest(ApiResult<object>.Fail("Nombre es requerido."));
+
+            if (string.IsNullOrWhiteSpace(req.PartidoPolitico))
+                return BadRequest(ApiResult<object>.Fail("PartidoPolitico es requerido."));
 
             if (eleccion.Tipo == TipoEleccion.Plancha)
             {
