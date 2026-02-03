@@ -75,14 +75,19 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <form asp-action="EliminarLista" method="post" style="display:inline;">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@lista.Id" />
-                                        <input type="hidden" name="eleccionId" value="@lista.EleccionId" />
-                                        <button type="submit" class="btn btn-ghost btn-sm text-error" onclick="return confirm('¿Está seguro de eliminar esta lista?');">
-                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-                                        </button>
-                                    </form>
+                                    <div style="display: flex; gap: 0.25rem;">
+                                        <a href="@Url.Action("EditarLista", new { id = lista.Id })" class="btn btn-ghost btn-sm" title="Editar">
+                                            <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                                        </a>
+                                        <form asp-action="EliminarLista" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@lista.Id" />
+                                            <input type="hidden" name="eleccionId" value="@lista.EleccionId" />
+                                            <button type="submit" class="btn btn-ghost btn-sm text-error" onclick="return confirm('¿Está seguro de eliminar esta lista?');">
+                                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         }

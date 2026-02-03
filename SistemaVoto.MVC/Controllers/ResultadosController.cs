@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using SistemaVoto.ApiConsumer;
+using SistemaVoto.Modelos;
 using SistemaVoto.MVC.Services;
 using SistemaVoto.MVC.ViewModels;
 
@@ -9,49 +11,88 @@ namespace SistemaVoto.MVC.Controllers;
 /// </summary>
 public class ResultadosController : Controller
 {
-    private readonly ApiService _api;
     private readonly CalculoEscanosService _calculoEscanos;
 
-    public ResultadosController(ApiService api, CalculoEscanosService calculoEscanos)
+    public ResultadosController(CalculoEscanosService calculoEscanos)
     {
-        _api = api;
         _calculoEscanos = calculoEscanos;
     }
 
     /// <summary>
     /// Muestra los resultados de una eleccion
     /// </summary>
-    public async Task<IActionResult> Index(int id)
+    public IActionResult Index(int id)
     {
-        var eleccionResult = await _api.GetAsync<EleccionDto>($"api/elecciones/{id}");
+        var eleccionResult = Crud<Eleccion>.ReadById(id);
         
         if (!eleccionResult.Success || eleccionResult.Data == null)
         {
             return NotFound();
         }
 
-        var resultadosResult = await _api.GetAsync<ResultadosDto>($"api/elecciones/{id}/resultados");
+        var eleccion = eleccionResult.Data;
         
+        // Obtener candidatos de esta eleccion
+        var candidatosResult = Crud<Candidato>.ReadAll();
+        var candidatos = candidatosResult.Data?.Where(c => c.EleccionId == id).ToList() ?? new List<Candidato>();
+        
+        // Obtener votos
+        var votosResult = Crud<Voto>.ReadAll();
+        var votos = votosResult.Data?.Where(v => v.EleccionId == id).ToList() ?? new List<Voto>();
+        
+        // Construir resultados
+        var totalVotos = votos.Count;
+        var candidatosConVotos = candidatos.Select(c => new CandidatoResultadoDto
+        {
+            Id = c.Id,
+            Nombre = c.Nombre,
+            PartidoPolitico = c.PartidoPolitico ?? "",
+            Votos = votos.Count(v => v.CandidatoId == c.Id),
+            Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.CandidatoId == c.Id) / totalVotos * 100 : 0
+        }).OrderByDescending(c => c.Votos).ToList();
+
+        var eleccionDto = new EleccionDto
+        {
+            Id = eleccion.Id,
+            Titulo = eleccion.Titulo,
+            Descripcion = eleccion.Descripcion,
+            Tipo = eleccion.Tipo.ToString(),
+            NumEscanos = eleccion.NumEscanos,
+            Estado = eleccion.Estado.ToString(),
+            FechaInicioUtc = eleccion.FechaInicioUtc,
+            FechaFinUtc = eleccion.FechaFinUtc,
+            TotalVotos = totalVotos,
+            TotalCandidatos = candidatos.Count
+        };
+
         var model = new ResultadosViewModel
         {
-            Eleccion = eleccionResult.Data,
-            Resultados = resultadosResult.Success ? resultadosResult.Data : null
+            Eleccion = eleccionDto,
+            Resultados = new ResultadosDto
+            {
+                EleccionId = eleccion.Id,
+                Titulo = eleccion.Titulo,
+                Tipo = eleccion.Tipo.ToString(),
+                NumEscanos = eleccion.NumEscanos,
+                TotalVotos = totalVotos,
+                Candidatos = candidatosConVotos
+            }
         };
 
         // Si hay escanos y resultados, calcular distribucion
-        if (model.Eleccion.NumEscanos > 0 && model.Resultados?.Candidatos.Any() == true)
+        if (eleccion.NumEscanos > 0 && candidatosConVotos.Any())
         {
-            var votosPorCandidato = model.Resultados.Candidatos
+            var votosPorCandidato = candidatosConVotos
                 .Select(c => (c.Nombre, c.Votos))
                 .ToList();
             
             model.DistribucionDHondt = _calculoEscanos.CalcularDHondt(
                 votosPorCandidato, 
-                model.Eleccion.NumEscanos);
+                eleccion.NumEscanos);
             
             model.DistribucionWebster = _calculoEscanos.CalcularWebster(
                 votosPorCandidato, 
-                model.Eleccion.NumEscanos);
+                eleccion.NumEscanos);
         }
 
         return View(model);
@@ -61,26 +102,35 @@ public class ResultadosController : Controller
     /// Exporta los resultados a CSV
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> ExportarCsv(int id)
+    public IActionResult ExportarCsv(int id)
     {
-        var eleccionResult = await _api.GetAsync<EleccionDto>($"api/elecciones/{id}");
-        var resultadosResult = await _api.GetAsync<ResultadosDto>($"api/elecciones/{id}/resultados");
-        
-        if (!resultadosResult.Success || resultadosResult.Data == null)
-        {
+        var eleccionResult = Crud<Eleccion>.ReadById(id);
+        if (!eleccionResult.Success || eleccionResult.Data == null)
             return NotFound();
-        }
+
+        var eleccion = eleccionResult.Data;
+        
+        // Obtener candidatos y votos
+        var candidatosResult = Crud<Candidato>.ReadAll();
+        var candidatos = candidatosResult.Data?.Where(c => c.EleccionId == id).ToList() ?? new List<Candidato>();
+        
+        var votosResult = Crud<Voto>.ReadAll();
+        var votos = votosResult.Data?.Where(v => v.EleccionId == id).ToList() ?? new List<Voto>();
+        
+        var totalVotos = votos.Count;
 
         var csv = new System.Text.StringBuilder();
         csv.AppendLine("Candidato,Partido,Votos,Porcentaje");
         
-        foreach (var candidato in resultadosResult.Data.Candidatos)
+        foreach (var candidato in candidatos.OrderByDescending(c => votos.Count(v => v.CandidatoId == c.Id)))
         {
-            csv.AppendLine($"\"{candidato.Nombre}\",\"{candidato.PartidoPolitico}\",{candidato.Votos},{candidato.Porcentaje:F2}%");
+            var votosC = votos.Count(v => v.CandidatoId == candidato.Id);
+            var porcentaje = totalVotos > 0 ? (double)votosC / totalVotos * 100 : 0;
+            csv.AppendLine($"\"{candidato.Nombre}\",\"{candidato.PartidoPolitico}\",{votosC},{porcentaje:F2}%");
         }
 
         var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
-        var nombreArchivo = $"resultados_{eleccionResult.Data?.Titulo ?? "eleccion"}_{DateTime.Now:yyyyMMdd}.csv";
+        var nombreArchivo = $"resultados_{eleccion.Titulo}_{DateTime.Now:yyyyMMdd}.csv";
         
         return File(bytes, "text/csv", nombreArchivo);
     }
@@ -89,20 +139,39 @@ public class ResultadosController : Controller
     /// Datos JSON para graficos en tiempo real
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetDatosGrafico(int id)
+    public IActionResult GetDatosGrafico(int id)
     {
-        var resultadosResult = await _api.GetAsync<ResultadosDto>($"api/elecciones/{id}/resultados");
-        
-        if (!resultadosResult.Success)
-        {
-            return Json(new { success = false, message = resultadosResult.Message });
-        }
+        var eleccionResult = Crud<Eleccion>.ReadById(id);
+        if (!eleccionResult.Success || eleccionResult.Data == null)
+            return Json(new { success = false, message = "Elección no encontrada" });
 
-        return Json(new { success = true, data = resultadosResult.Data });
+        // Obtener candidatos y votos
+        var candidatosResult = Crud<Candidato>.ReadAll();
+        var candidatos = candidatosResult.Data?.Where(c => c.EleccionId == id).ToList() ?? new List<Candidato>();
+        
+        var votosResult = Crud<Voto>.ReadAll();
+        var votos = votosResult.Data?.Where(v => v.EleccionId == id).ToList() ?? new List<Voto>();
+        
+        var totalVotos = votos.Count;
+        var candidatosConVotos = candidatos.Select(c => new
+        {
+            Nombre = c.Nombre,
+            PartidoPolitico = c.PartidoPolitico ?? "",
+            Votos = votos.Count(v => v.CandidatoId == c.Id),
+            Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.CandidatoId == c.Id) / totalVotos * 100 : 0
+        }).OrderByDescending(c => c.Votos).ToList();
+
+        return Json(new { 
+            success = true, 
+            data = new {
+                TotalVotos = totalVotos,
+                Candidatos = candidatosConVotos
+            }
+        });
     }
 }
 
-// ViewModels para Resultados
+// ViewModel para Resultados
 public class ResultadosViewModel
 {
     public EleccionDto Eleccion { get; set; } = null!;

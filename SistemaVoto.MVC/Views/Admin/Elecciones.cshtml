@@ -112,6 +112,22 @@
                                         <a href="/Resultados/@eleccion.Id" class="btn btn-ghost btn-sm" title="Resultados">
                                             <i data-lucide="bar-chart" style="width: 16px; height: 16px;"></i>
                                         </a>
+                                        <form asp-action="ToggleActivarEleccion" method="post" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@eleccion.Id" />
+                                            @if (eleccion.Estado == EstadoEleccion.Activa)
+                                            {
+                                                <button type="submit" class="btn btn-ghost btn-sm" title="Desactivar">
+                                                    <i data-lucide="pause-circle" style="width: 16px; height: 16px; color: var(--color-warning);"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" class="btn btn-ghost btn-sm" title="Activar">
+                                                    <i data-lucide="play-circle" style="width: 16px; height: 16px; color: var(--color-success);"></i>
+                                                </button>
+                                            }
+                                        </form>
                                         <form asp-action="EliminarEleccion" method="post" style="display: inline;"
                                               onsubmit="return confirm('¿Seguro que desea eliminar esta eleccion?')">
                                             <input type="hidden" name="id" value="@eleccion.Id" />

@@ -173,7 +173,30 @@ public class AdminController : Controller
 
     private string GenerateRandomPassword()
     {
-        return "Voto" + Guid.NewGuid().ToString().Substring(0, 6) + "!";
+        // Generar contraseña que cumpla políticas de Identity
+        // Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 dígito, 1 especial
+        var random = new Random();
+        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string lower = "abcdefghijklmnopqrstuvwxyz";
+        const string digits = "0123456789";
+        const string special = "!@#$%&*";
+        
+        // Garantizar al menos uno de cada tipo
+        var password = new char[10];
+        password[0] = upper[random.Next(upper.Length)];
+        password[1] = lower[random.Next(lower.Length)];
+        password[2] = digits[random.Next(digits.Length)];
+        password[3] = special[random.Next(special.Length)];
+        
+        // Llenar el resto con caracteres aleatorios de todos los tipos
+        var allChars = upper + lower + digits + special;
+        for (int i = 4; i < password.Length; i++)
+        {
+            password[i] = allChars[random.Next(allChars.Length)];
+        }
+        
+        // Mezclar para que no sea predecible
+        return new string(password.OrderBy(_ => random.Next()).ToArray());
     }
 
     /// <summary>
@@ -304,6 +327,50 @@ public class AdminController : Controller
             TempData["Success"] = "Eleccion eliminada";
         else
             TempData["Error"] = result.Message ?? "No se pudo eliminar la eleccion";
+
+        return RedirectToAction("Elecciones");
+    }
+
+    /// <summary>
+    /// Toggle de activacion/desactivacion de eleccion
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ToggleActivarEleccion(int id)
+    {
+        var result = Crud<Eleccion>.ReadById(id);
+        
+        if (!result.Success || result.Data == null)
+        {
+            TempData["Error"] = "Elección no encontrada";
+            return RedirectToAction("Elecciones");
+        }
+
+        var eleccion = result.Data;
+        
+        // Toggle estado
+        if (eleccion.Estado == EstadoEleccion.Activa)
+        {
+            eleccion.Estado = EstadoEleccion.Pendiente;
+            eleccion.Activo = false;
+        }
+        else
+        {
+            eleccion.Estado = EstadoEleccion.Activa;
+            eleccion.Activo = true;
+        }
+
+        var updateResult = Crud<Eleccion>.Update(id.ToString(), eleccion);
+        
+        if (updateResult.Success)
+        {
+            var estadoText = eleccion.Estado == EstadoEleccion.Activa ? "activada" : "desactivada";
+            TempData["Success"] = $"Elección {estadoText} exitosamente";
+        }
+        else
+        {
+            TempData["Error"] = updateResult.Message ?? "Error al cambiar estado";
+        }
 
         return RedirectToAction("Elecciones");
     }
@@ -923,24 +990,30 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public IActionResult CrearCandidato(int eleccionId)
+    public IActionResult CrearCandidato(int? eleccionId)
     {
-        var eleccionRes = Crud<Eleccion>.ReadById(eleccionId);
-        var eleccion = eleccionRes.Data;
-
-        var model = new CandidatoViewModel
-        {
-            EleccionId = eleccionId,
-            EleccionTitulo = eleccion?.Titulo
-        };
+        // Siempre cargar todas las elecciones para el selector
+        var eleccionesRes = Crud<Eleccion>.ReadAll();
+        ViewBag.Elecciones = eleccionesRes.Data ?? new List<Eleccion>();
         
-        // Si es plancha/mixta, cargar listas
-        if (eleccion != null && (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta))
+        var model = new CandidatoViewModel();
+        
+        if (eleccionId.HasValue && eleccionId.Value > 0)
         {
-            var listasRes = Crud<Lista>.ReadAll();
-            var listas = listasRes.Data?.Where(l => l.EleccionId == eleccionId).ToList() ?? new List<Lista>();
-            ViewBag.Listas = listas;
-            model.RequiereLista = true;
+            var eleccionRes = Crud<Eleccion>.ReadById(eleccionId.Value);
+            var eleccion = eleccionRes.Data;
+
+            model.EleccionId = eleccionId.Value;
+            model.EleccionTitulo = eleccion?.Titulo;
+            
+            // Si es plancha/mixta, cargar listas
+            if (eleccion != null && (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta))
+            {
+                var listasRes = Crud<Lista>.ReadAll();
+                var listas = listasRes.Data?.Where(l => l.EleccionId == eleccionId.Value).ToList() ?? new List<Lista>();
+                ViewBag.Listas = listas;
+                model.RequiereLista = true;
+            }
         }
 
         return View(model);
@@ -952,9 +1025,12 @@ public class AdminController : Controller
     {
         if (!ModelState.IsValid)
         {
-            // Recargar listas en caso de error
+            // Recargar elecciones y listas en caso de error
+            var eleccionesRes = Crud<Eleccion>.ReadAll();
+            ViewBag.Elecciones = eleccionesRes.Data ?? new List<Eleccion>();
+            
             var listasRes = Crud<Lista>.ReadAll();
-             var listas = listasRes.Data?.Where(l => l.EleccionId == model.EleccionId).ToList() ?? new List<Lista>();
+            var listas = listasRes.Data?.Where(l => l.EleccionId == model.EleccionId).ToList() ?? new List<Lista>();
             ViewBag.Listas = listas;
             return View(model);
         }
