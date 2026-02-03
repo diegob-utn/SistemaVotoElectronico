@@ -9,7 +9,8 @@ namespace SistemaVoto.Modelos
     public enum TipoEleccion
     {
         Nominal = 0,
-        Plancha = 1
+        Plancha = 1,
+        Mixta = 2
     }
 
     public enum EstadoEleccion

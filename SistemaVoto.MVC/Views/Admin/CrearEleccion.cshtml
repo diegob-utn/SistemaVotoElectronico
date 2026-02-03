@@ -72,10 +72,11 @@
                     </label>
                     <select asp-for="Tipo" class="form-control">
                         <option value="Nominal">Nominal - Voto por candidato individual</option>
-                        <option value="Plancha">Plancha - Voto por lista/partido (usa escanos)</option>
+                        <option value="Plancha">Plancha - Voto por lista/partido completo</option>
+                        <option value="Mixta">Mixta - Candidatos de diferentes listas</option>
                     </select>
                     <span asp-validation-for="Tipo" class="text-error"></span>
-                    <small class="text-muted">Nominal: 1 voto = 1 candidato. Plancha: distribucion por escanos.</small>
+                    <small class="text-muted">Nominal: 1 voto = 1 candidato. Plancha/Mixta: usa escanos.</small>
                 </div>
 
                 <div class="form-group">
@@ -85,7 +86,7 @@
                     </label>
                     <input asp-for="NumEscanos" class="form-control" type="number" min="1" max="100" />
                     <span asp-validation-for="NumEscanos" class="text-error"></span>
-                    <small class="text-muted">Solo aplica para tipo Plancha. En Nominal se ignora.</small>
+                    <small class="text-muted">Solo aplica para Plancha y Mixta. En Nominal se ignora.</small>
                 </div>
             </div>
 

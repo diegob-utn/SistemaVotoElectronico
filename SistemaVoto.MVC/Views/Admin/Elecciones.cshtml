@@ -1,4 +1,5 @@
-@model List<EleccionDto>
+@using SistemaVoto.Modelos
+@model List<Eleccion>
 @{
     ViewData["Title"] = "Elecciones";
 }
@@ -48,14 +49,14 @@
             <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15);">
                 <i data-lucide="check-circle" style="width: 24px; height: 24px; color: var(--color-success);"></i>
             </div>
-            <div class="stat-card-value">@Model.Count(e => e.Estado == "Activa")</div>
+            <div class="stat-card-value">@Model.Count(e => e.Estado == EstadoEleccion.Activa)</div>
             <div class="stat-card-label">Activas</div>
         </div>
         <div class="stat-card glass-card">
             <div class="stat-card-icon" style="background: rgba(85, 180, 212, 0.15);">
                 <i data-lucide="clock" style="width: 24px; height: 24px; color: var(--color-info);"></i>
             </div>
-            <div class="stat-card-value">@Model.Count(e => e.Estado == "Pendiente")</div>
+            <div class="stat-card-value">@Model.Count(e => e.Estado == EstadoEleccion.Pendiente)</div>
             <div class="stat-card-label">Pendientes</div>
         </div>
     </div>
@@ -82,9 +83,9 @@
                         {
                             var badgeClass = eleccion.Estado switch
                             {
-                                "Activa" => "badge-success",
-                                "Pendiente" => "badge-warning",
-                                "Finalizada" => "badge-info",
+                                EstadoEleccion.Activa => "badge-success",
+                                EstadoEleccion.Pendiente => "badge-warning",
+                                EstadoEleccion.Cerrada => "badge-info",
                                 _ => "badge-accent"
                             };
                             <tr>

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SistemaVoto.Data.Data;
 using SistemaVoto.MVC.Services;
+using SistemaVoto.ApiConsumer;
+using SistemaVoto.Modelos;
 
 namespace SistemaVoto.MVC
 {
@@ -11,9 +13,15 @@ namespace SistemaVoto.MVC
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configuracion de la API (para llamadas adicionales)
+            // Configuracion de la API
             var apiBaseUrl = builder.Configuration["Api:BaseUrl"] 
                 ?? "https://sistemavotoelectronico.onrender.com";
+
+            // Configurar URLs de la API para Crud<T>
+            Crud<Eleccion>.UrlBase = $"{apiBaseUrl}/api/elecciones";
+            Crud<Candidato>.UrlBase = $"{apiBaseUrl}/api/candidatos";
+            Crud<Voto>.UrlBase = $"{apiBaseUrl}/api/votos";
+            Crud<Lista>.UrlBase = $"{apiBaseUrl}/api/listas";
 
             // Configurar DbContext con PostgreSQL (misma BD que la API)
             var connectionString = builder.Configuration.GetConnectionString("DbContext.postgres-render")

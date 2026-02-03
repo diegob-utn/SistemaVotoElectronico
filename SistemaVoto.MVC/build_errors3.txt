@@ -1,0 +1,20 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos est├ín actualizados para la restauraci├│n.
+  SistemaVoto.Modelos -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.Modelos\bin\Debug\net8.0\SistemaVoto.Modelos.dll
+  SistemaVoto.Data -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.Data\bin\Debug\net8.0\SistemaVoto.Data.dll
+  SistemaVoto.ApiConsumer -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.ApiConsumer\bin\Debug\net8.0\SistemaVoto.ApiConsumer.dll
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\Dashboard.cshtml(113,45): error CS0029: No se puede convertir impl├¡citamente el tipo 'string' en 'SistemaVoto.Modelos.EstadoEleccion' [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\Dashboard.cshtml(114,45): error CS0029: No se puede convertir impl├¡citamente el tipo 'string' en 'SistemaVoto.Modelos.EstadoEleccion' [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\Dashboard.cshtml(115,45): error CS0029: No se puede convertir impl├¡citamente el tipo 'string' en 'SistemaVoto.Modelos.EstadoEleccion' [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(258,31): warning CS8601: Posible asignaci├│n de referencia nula. [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+
+ERROR al compilar.
+
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(258,31): warning CS8601: Posible asignaci├│n de referencia nula. [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\Dashboard.cshtml(113,45): error CS0029: No se puede convertir impl├¡citamente el tipo 'string' en 'SistemaVoto.Modelos.EstadoEleccion' [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\Dashboard.cshtml(114,45): error CS0029: No se puede convertir impl├¡citamente el tipo 'string' en 'SistemaVoto.Modelos.EstadoEleccion' [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\Dashboard.cshtml(115,45): error CS0029: No se puede convertir impl├¡citamente el tipo 'string' en 'SistemaVoto.Modelos.EstadoEleccion' [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+    1 Advertencia(s)
+    3 Errores
+
+Tiempo transcurrido 00:00:07.51

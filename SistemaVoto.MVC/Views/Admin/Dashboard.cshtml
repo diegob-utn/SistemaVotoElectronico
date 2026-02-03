@@ -1,3 +1,5 @@
+@using SistemaVoto.MVC.Controllers
+@using SistemaVoto.Modelos
 @model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
@@ -108,9 +110,9 @@
                                     @{
                                         var badgeClass = eleccion.Estado switch
                                         {
-                                            "Activa" => "badge-success",
-                                            "Pendiente" => "badge-warning",
-                                            "Finalizada" => "badge-info",
+                                            EstadoEleccion.Activa => "badge-success",
+                                            EstadoEleccion.Pendiente => "badge-warning",
+                                            EstadoEleccion.Cerrada => "badge-info",
                                             _ => "badge-accent"
                                         };
                                     }

@@ -1,7 +1,9 @@
-@model List<CandidatoDto>
+@using SistemaVoto.Modelos
+@model List<Candidato>
 @{
     ViewData["Title"] = "Candidatos";
-    var eleccionId = ViewBag.EleccionId as int?;
+    var eleccionId = ViewBag.EleccionIdFilter as int?;
+    var elecciones = ViewBag.Elecciones as List<Eleccion> ?? new List<Eleccion>();
 }
 
 <div class="candidatos-container">
@@ -56,7 +58,10 @@
                     <div class="candidate-info">
                         <h3>@candidato.Nombre</h3>
                         <p class="candidate-party">@(candidato.PartidoPolitico ?? "Sin partido")</p>
-                        <p class="candidate-election text-muted">@(candidato.EleccionTitulo ?? $"Eleccion #{candidato.EleccionId}")</p>
+                        @{
+                            var eleccionNombre = elecciones.FirstOrDefault(e => e.Id == candidato.EleccionId)?.Titulo ?? $"Eleccion #{candidato.EleccionId}";
+                        }
+                        <p class="candidate-election text-muted">@eleccionNombre</p>
                     </div>
                     <div class="candidate-actions">
                         <form asp-action="EliminarCandidato" method="post" 

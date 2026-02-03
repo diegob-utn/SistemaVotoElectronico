@@ -1,8 +1,9 @@
-@model List<VotoDto>
+@using SistemaVoto.Modelos
+@model List<Voto>
 @{
     ViewData["Title"] = "Historial de Votos";
-    var elecciones = ViewBag.Elecciones as List<EleccionDto> ?? new List<EleccionDto>();
-    var eleccionId = ViewBag.EleccionId as int?;
+    var elecciones = ViewBag.Elecciones as List<Eleccion> ?? new List<Eleccion>();
+    var eleccionId = ViewBag.EleccionIdFilter as int?;
 }
 
 <div class="historial-container">
@@ -78,13 +79,13 @@
                         {
                             <tr>
                                 <td>
-                                    <code class="hash-code" title="@voto.HashVoto">
-                                        @(voto.HashVoto.Length > 16 ? voto.HashVoto.Substring(0, 16) + "..." : voto.HashVoto)
+                                    <code class="hash-code" title="@voto.HashActual">
+                                        @(voto.HashActual.Length > 16 ? voto.HashActual.Substring(0, 16) + "..." : voto.HashActual)
                                     </code>
                                 </td>
-                                <td>@voto.FechaVoto.ToString("dd/MM/yyyy HH:mm:ss")</td>
-                                <td>@(voto.EleccionTitulo ?? $"#{voto.EleccionId}")</td>
-                                <td>@(voto.CandidatoNombre ?? $"#{voto.CandidatoId}")</td>
+                                <td>@voto.FechaVotoUtc.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>@(voto.Eleccion?.Titulo ?? $"#{voto.EleccionId}")</td>
+                                <td>@(voto.Candidato?.Nombre ?? (voto.Lista?.Nombre ?? $"#{voto.CandidatoId ?? voto.ListaId}"))</td>
                                 <td>
                                     <span class="badge badge-success">
                                         <i data-lucide="check" style="width: 14px; height: 14px;"></i>

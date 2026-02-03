@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SistemaVoto.MVC.Services;
+using SistemaVoto.MVC.ViewModels;
 
 namespace SistemaVoto.MVC.Controllers;
 

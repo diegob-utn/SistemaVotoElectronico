@@ -28,6 +28,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SistemaVoto.Data\SistemaVoto.Data.csproj" />
+    <ProjectReference Include="..\SistemaVoto.Modelos\SistemaVoto.Modelos.csproj" />
+    <ProjectReference Include="..\SistemaVoto.ApiConsumer\SistemaVoto.ApiConsumer.csproj" />
   </ItemGroup>
 
 </Project>

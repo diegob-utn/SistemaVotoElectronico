@@ -55,8 +55,8 @@ namespace SistemaVoto.Api.Controllers
             // Coherencia tipo/escaños (además tienes check constraint en DB)
             if (req.Tipo == TipoEleccion.Nominal && req.NumEscanos != 0)
                 return BadRequest(ApiResult<object>.Fail("Si Tipo es Nominal, NumEscanos debe ser 0."));
-            if (req.Tipo == TipoEleccion.Plancha && req.NumEscanos <= 0)
-                return BadRequest(ApiResult<object>.Fail("Si Tipo es Plancha, NumEscanos debe ser > 0."));
+            if ((req.Tipo == TipoEleccion.Plancha || req.Tipo == TipoEleccion.Mixta) && req.NumEscanos <= 0)
+                return BadRequest(ApiResult<object>.Fail("Si Tipo es Plancha o Mixta, NumEscanos debe ser > 0."));
 
             // Ubicación opcional
             if (!req.UsaUbicacion)
