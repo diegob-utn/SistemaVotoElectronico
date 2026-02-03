@@ -99,6 +99,7 @@ public class AdminController : Controller
             Titulo = model.Titulo ?? string.Empty,
             Descripcion = model.Descripcion,
             FechaInicioUtc = model.FechaInicioUtc,
+            FechaInicio = model.FechaInicioUtc, // Legacy fix
             FechaFinUtc = model.FechaFinUtc,
             Tipo = tipo,
             NumEscanos = numEscanos,

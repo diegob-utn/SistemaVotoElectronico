@@ -23,6 +23,10 @@ namespace SistemaVoto.Modelos
         public DateTime FechaInicioUtc { get; set; }
         public DateTime FechaFinUtc { get; set; }
 
+        // Compatibilidad API Legacy
+        [JsonIgnore]
+        public DateTime FechaInicio { get; set; }
+
         public TipoEleccion Tipo { get; set; }     // 0 Nominal, 1 Plancha
         public int NumEscanos { get; set; }        // 0 si Nominal, >0 si Plancha
         public EstadoEleccion Estado { get; set; } = EstadoEleccion.Pendiente;
