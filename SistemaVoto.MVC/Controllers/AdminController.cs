@@ -115,7 +115,7 @@ public class AdminController : Controller
             _ => TipoEleccion.Nominal
         };
 
-        int numEscanos = tipo == TipoEleccion.Nominal ? 0 : Math.Max(1, model.NumEscanos);
+        int numEscanos = Math.Max(1, model.NumEscanos);
         int usuariosAGenerar = model.NumEscanos; // Usamos el input del usuario para decidir cuántos crear
 
         var eleccion = new Eleccion
@@ -278,7 +278,7 @@ public class AdminController : Controller
             _ => TipoEleccion.Nominal
         };
 
-        int numEscanos = tipo == TipoEleccion.Nominal ? 0 : Math.Max(1, model.NumEscanos);
+        int numEscanos = Math.Max(1, model.NumEscanos);
 
         var eleccion = new Eleccion
         {
@@ -978,14 +978,13 @@ public class AdminController : Controller
             EleccionId = model.EleccionId
         };
         
-        var result = Crud<Lista>.Update(model.Id.ToString(), lista);
-        if (result.Success)
+        if (_crud.UpdateLista(lista))
         {
             TempData["Success"] = "Lista actualizada";
             return RedirectToAction("Listas", new { eleccionId = model.EleccionId });
         }
 
-        model.ErrorMessage = result.Message;
+        model.ErrorMessage = "No se pudo actualizar la lista.";
         return View(model);
     }
 
@@ -1060,7 +1059,17 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult CrearCandidato(CandidatoViewModel model)
     {
-        // Validacion personalizada: Requerir Lista O Partido
+        // Validacion personalizada: Requerir Lista segun Tipo de Eleccion
+        var eleccion = _crud.GetEleccion(model.EleccionId);
+        
+        if (eleccion != null && eleccion.Tipo == TipoEleccion.Plancha)
+        {
+             if (!model.ListaId.HasValue || model.ListaId.Value <= 0)
+             {
+                 ModelState.AddModelError("ListaId", "En elecciones por Plancha, el candidato debe pertenecer a una Lista.");
+             }
+        }
+
         if (model.ListaId.HasValue && model.ListaId.Value > 0)
         {
             // Si selecciono lista, obtener el nombre del partido de la lista
@@ -1072,7 +1081,11 @@ public class AdminController : Controller
         }
         else if (string.IsNullOrWhiteSpace(model.PartidoPolitico))
         {
-            ModelState.AddModelError("PartidoPolitico", "El partido político o selección de lista es obligatorio.");
+             // Para Nominal o Mixta (si es independiente) se requiere partido manual
+             if (eleccion?.Tipo != TipoEleccion.Plancha) 
+             {
+                ModelState.AddModelError("PartidoPolitico", "El partido político o selección de lista es obligatorio.");
+             }
         }
 
         if (!ModelState.IsValid)

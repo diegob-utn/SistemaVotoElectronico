@@ -386,79 +386,90 @@
         function initCharts() {
             @if (Model.Resultados != null)
             {
-                // Determinamos que datos usar (Listas o Candidatos)
-                var usarListas = Model.Resultados.Listas != null && Model.Resultados.Listas.Any();
-                
-                object dataObj;
-                if (usarListas) {
-                     dataObj = Model.Resultados.Listas.Select(l => new { 
+                object listasData = Model.Resultados.Listas?.Select(l => new { 
                         nombre = l.Nombre, 
                         votos = l.Votos, 
-                        porcentaje = l.Porcentaje 
-                    });
-                } else {
-                     dataObj = Model.Resultados.Candidatos.Select(c => new { 
+                        porcentaje = l.Porcentaje,
+                        tipo = "Lista"
+                    }).ToList();
+                if (listasData == null) listasData = new List<object>();
+
+                object candidatosData = Model.Resultados.Candidatos?.Select(c => new { 
                         nombre = c.Nombre, 
                         votos = c.Votos, 
-                        porcentaje = c.Porcentaje 
-                    });
-                }
+                        porcentaje = c.Porcentaje,
+                        tipo = "Candidato"
+                    }).ToList();
+                if (candidatosData == null) candidatosData = new List<object>();
                 
-                var jsonString = System.Text.Json.JsonSerializer.Serialize(dataObj);
+                // Serializamos ambos
+                var jsonListas = System.Text.Json.JsonSerializer.Serialize(listasData);
+                var jsonCandidatos = System.Text.Json.JsonSerializer.Serialize(candidatosData);
+                var tipoEleccion = Model.Eleccion.Tipo.ToString(); 
+
+                // Pie Chart Logic
+
 
                 <text>
-                var jsonData = @Html.Raw(jsonString);
+                var dataListas = @Html.Raw(jsonListas);
+                var dataCandidatos = @Html.Raw(jsonCandidatos);
+                var tipoEleccion = '@Html.Raw(tipoEleccion)';
+
+                var palette = [
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim(),
+                    '#FF4560', '#775DD0', '#00E396', '#FEB019', '#FF66C3'
+                ];
+
+                // Assign colors consistently
+                dataListas.forEach((d, i) => { d.color = palette[i % palette.length]; });
                 
-                if (jsonData && jsonData.length > 0) {
-                    // Bar Chart
-                    var optionsBar = {
+                var globalIndex = dataListas.length; 
+                dataCandidatos.forEach((d, i) => { d.color = palette[(globalIndex + i) % palette.length]; });
+
+                function renderChart(elementId, data, title) {
+                    if (!data || data.length === 0) return;
+
+                    var options = {
                         series: [{
                             name: 'Votos',
-                            data: jsonData.map(item => item.votos)
+                            data: data.map(item => item.votos)
                         }],
                         chart: {
                             type: 'bar',
-                            height: 350,
+                            height: 300,
                             background: 'transparent',
                             toolbar: { show: false }
+                        },
+                        title: { 
+                            text: title, 
+                            align: 'left',
+                            style: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() }
                         },
                         plotOptions: {
                             bar: {
                                 horizontal: true,
                                 borderRadius: 6,
-                                distributed: true,
+                                distributed: true, // Distributed ensures each bar gets its own color from the colors array
                                 dataLabels: { position: 'top' }
                             }
                         },
-                        colors: [
-                            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
-                        ],
+                        colors: data.map(item => item.color), // Explicitly map assigned colors
                         dataLabels: {
                             enabled: true,
-                            formatter: function(val, opt) {
-                                return val.toLocaleString();
-                            },
+                            formatter: function(val) { return val.toLocaleString(); },
                             style: { fontSize: '12px' },
                             offsetX: 10
                         },
                         xaxis: {
-                            categories: jsonData.map(item => item.nombre),
-                            labels: {
-                                style: {
-                                    colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
-                                }
-                            }
+                            categories: data.map(item => item.nombre),
+                            labels: { style: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() } }
                         },
                         yaxis: {
-                            labels: {
-                                style: {
-                                    colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
-                                }
-                            }
+                            labels: { style: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() } }
                         },
                         grid: {
                             borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
@@ -467,26 +478,61 @@
                             mode: document.documentElement.getAttribute('data-theme') || 'light'
                         }
                     };
-                    
-                    var chartBar = new ApexCharts(document.querySelector("#chartResultados"), optionsBar);
-                    chartBar.render();
-                    
-                    // Pie Chart
+                    var chart = new ApexCharts(document.querySelector(elementId), options);
+                    chart.render();
+                }
+
+                // Logic for Mixta: Show BOTH if available
+                // Logic for Plancha: Show Listas
+                // Logic for Nominal: Show Candidatos
+
+                // Clear previous content
+                document.querySelector("#chartResultados").innerHTML = "";
+
+                var chartContainer = document.querySelector("#chartResultados");
+                
+                if (dataListas.length > 0) {
+                     var divListas = document.createElement("div");
+                     divListas.id = "chartListas";
+                     divListas.style.marginBottom = "20px";
+                     chartContainer.appendChild(divListas);
+                     
+                     renderChart("#chartListas", dataListas, "Votos por Lista");
+                }
+
+                if (dataCandidatos.length > 0 && (tipoEleccion === 'Mixta' || tipoEleccion === 'Nominal' || dataListas.length === 0)) {
+                     var divCandidatos = document.createElement("div");
+                     divCandidatos.id = "chartCandidatos";
+                     chartContainer.appendChild(divCandidatos);
+
+                     renderChart("#chartCandidatos", dataCandidatos, "Votos por Candidato");
+                }
+
+                // Pie Chart - Combine if Mixta? Or just default to Listas which carry weights?
+                // For now, let's stick to the previous logic for Pie: Use Listas if available (Proportional view), else Candidatos.
+                // Or better: Allow user to switch? For now keeps it simple.
+                // NOTE: User showed Pie Chart with correct data.
+                
+                // Pie Chart Logic
+                var pieData = [];
+                if (tipoEleccion === 'Mixta') {
+                    // Combine both for global distribution
+                     pieData = dataListas.concat(dataCandidatos);
+                } else {
+                     // Default behavior: Prioritize Listas (Plancha), fallback to Candidates (Nominal)
+                     pieData = (dataListas.length > 0) ? dataListas : dataCandidatos;
+                }
+
+                if (pieData && pieData.length > 0) {
                     var optionsPie = {
-                        series: jsonData.map(item => item.votos),
-                        labels: jsonData.map(item => item.nombre),
+                        series: pieData.map(item => item.votos),
+                        labels: pieData.map(item => item.nombre),
                         chart: {
                             type: 'donut',
                             height: 350,
                             background: 'transparent'
                         },
-                        colors: [
-                            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
-                            getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
-                        ],
+                        colors: pieData.map(item => item.color),
                         plotOptions: {
                             pie: {
                                 donut: {
@@ -504,19 +550,17 @@
                         },
                         legend: {
                             position: 'bottom',
-                            labels: {
-                                colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
-                            }
+                            labels: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() }
                         },
-                        theme: {
+                         theme: {
                             mode: document.documentElement.getAttribute('data-theme') || 'light'
                         }
                     };
-                    
                     var chartPie = new ApexCharts(document.querySelector("#chartDistribucion"), optionsPie);
                     chartPie.render();
                 }
                 </text>
+
             }
         }
         
