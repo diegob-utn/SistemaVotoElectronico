@@ -29,7 +29,12 @@ namespace SistemaVoto.Modelos
         public int? ListaId { get; set; }
         public Lista? Lista { get; set; }
 
-        public DateTime FechaVotoUtc { get; set; } = DateTime.UtcNow;
+        private DateTime _fechaVotoUtc = DateTime.UtcNow;
+        public DateTime FechaVotoUtc 
+        { 
+            get => _fechaVotoUtc; 
+            set => _fechaVotoUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc); 
+        }
 
         // Tamper-evident chain
         public string HashPrevio { get; set; } = "GENESIS";

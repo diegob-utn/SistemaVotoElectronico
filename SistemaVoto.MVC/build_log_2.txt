@@ -1,14 +1,18 @@
   Determinando los proyectos que se van a restaurar...
-  Todos los proyectos est├ín actualizados para la restauraci├│n.
+  Todos los proyectos están actualizados para la restauración.
   SistemaVoto.Modelos -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.Modelos\bin\Debug\net8.0\SistemaVoto.Modelos.dll
   SistemaVoto.ApiConsumer -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.ApiConsumer\bin\Debug\net8.0\SistemaVoto.ApiConsumer.dll
   SistemaVoto.Data -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.Data\bin\Debug\net8.0\SistemaVoto.Data.dll
-C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(249,5): error CS1519: Invalid token '}' in a member declaration [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(815,26): error CS0111: El tipo 'AdminController' ya define un miembro denominado 'CrearLista' con los mismos tipos de parámetro [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(845,26): error CS0111: El tipo 'AdminController' ya define un miembro denominado 'EditarLista' con los mismos tipos de parámetro [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(866,26): error CS0111: El tipo 'AdminController' ya define un miembro denominado 'EditarLista' con los mismos tipos de parámetro [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
 
 ERROR al compilar.
 
-C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(249,5): error CS1519: Invalid token '}' in a member declaration [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(815,26): error CS0111: El tipo 'AdminController' ya define un miembro denominado 'CrearLista' con los mismos tipos de parámetro [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(845,26): error CS0111: El tipo 'AdminController' ya define un miembro denominado 'EditarLista' con los mismos tipos de parámetro [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(866,26): error CS0111: El tipo 'AdminController' ya define un miembro denominado 'EditarLista' con los mismos tipos de parámetro [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
     0 Advertencia(s)
-    1 Errores
+    3 Errores
 
-Tiempo transcurrido 00:00:01.50
+Tiempo transcurrido 00:00:04.18

@@ -1,63 +1,89 @@
 @using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
 @model ListaViewModel
+
 @{
-    ViewData["Title"] = "Crear Lista";
+    ViewData["Title"] = "Nueva Lista";
+    var elecciones = ViewBag.Elecciones as List<Eleccion>;
 }
 
-<div class="auth-container" style="max-width: 600px; margin: 2rem auto;">
-    <div class="auth-card">
-        <div class="auth-header">
-            <a href="@Url.Action("Listas", new { eleccionId = Model.EleccionId })" class="auth-back-link">
-                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Volver
-            </a>
-            <h1 class="auth-title">
-                <i data-lucide="layers" style="width: 24px; height: 24px;"></i>
-                Nueva Lista
-            </h1>
-            <p class="auth-subtitle">Registre una nueva lista o partido político para la elección</p>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h2>Nueva Lista / Partido</h2>
+                @if (Model.EleccionId > 0)
+                {
+                    <p class="text-muted">Para elección: <strong>@Model.EleccionTitulo</strong></p>
+                }
+                else
+                {
+                    <p class="text-muted">Registre una nueva lista en el sistema</p>
+                }
+            </div>
+            <div class="card-body">
+                @if (Model.ErrorMessage != null)
+                {
+                    <div class="alert alert-error mb-4">
+                        <i data-lucide="alert-circle"></i> @Model.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="CrearLista" method="post">
+                    @Html.AntiForgeryToken()
+                    
+                    @* Si ya hay eleccion definida, input hidden. Si no, Select *@
+                    @if (Model.EleccionId > 0)
+                    {
+                        <input type="hidden" asp-for="EleccionId" />
+                    }
+                    else
+                    {
+                        <div class="form-group mb-3">
+                            <label asp-for="EleccionId" class="control-label font-bold">Seleccione Elección (Plancha/Mixta)</label>
+                            <select asp-for="EleccionId" class="form-select">
+                                <option value="">-- Seleccione una Elección --</option>
+                                @if (elecciones != null)
+                                {
+                                    foreach(var e in elecciones.Where(x => x.Tipo == TipoEleccion.Plancha || x.Tipo == TipoEleccion.Mixta))
+                                    {
+                                        <option value="@e.Id">@e.Titulo (@e.Tipo)</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="EleccionId" class="text-danger"></span>
+                            <small class="text-muted">Solo elecciones Plancha o Mixta admiten listas.</small>
+                        </div>
+                    }
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Nombre" class="control-label">Nombre de la Lista / Partido</label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Movimiento Unidad" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="LogoUrl" class="control-label">URL del Logo (Opcional)</label>
+                        <input asp-for="LogoUrl" class="form-control" placeholder="https://..." />
+                        <span asp-validation-for="LogoUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a asp-action="Listas" asp-route-eleccionId="@(Model.EleccionId > 0 ? Model.EleccionId : "")" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+                            Guardar Lista
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-error">
-                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
-                <span>@Model.ErrorMessage</span>
-            </div>
-        }
-
-        <form asp-action="CrearLista" method="post" class="auth-form">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="EleccionId" />
-
-            <div class="form-group">
-                <label asp-for="Nombre" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-icon">
-                        <i data-lucide="type" style="width: 20px; height: 20px;"></i>
-                    </span>
-                    <input asp-for="Nombre" class="form-input" placeholder="Ej. Partido Progreso" />
-                </div>
-                <span asp-validation-for="Nombre" class="text-error text-sm"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="LogoUrl" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-icon">
-                        <i data-lucide="image" style="width: 20px; height: 20px;"></i>
-                    </span>
-                    <input asp-for="LogoUrl" class="form-input" placeholder="https://ejemplo.com/logo.png" />
-                </div>
-                <span asp-validation-for="LogoUrl" class="text-error text-sm"></span>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-block">
-                <i data-lucide="save" style="width: 20px; height: 20px;"></i> Crear Lista
-            </button>
-        </form>
     </div>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        lucide.createIcons();
+    </script>
 }

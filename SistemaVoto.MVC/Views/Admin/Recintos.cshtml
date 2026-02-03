@@ -64,13 +64,18 @@
                                     }
                                 </td>
                                 <td>
-                                    <form asp-action="EliminarRecinto" method="post" style="display:inline;"
-                                          onsubmit="return confirm('¿Seguro que desea eliminar este recinto?')">
-                                        <input type="hidden" name="id" value="@item.Id" />
-                                        <button type="submit" class="btn btn-ghost btn-sm text-error">
-                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-                                        </button>
-                                    </form>
+                                    <div style="display: flex; gap: 0.25rem;">
+                                        <a href="@Url.Action("EditarRecinto", new { id = item.Id })" class="btn btn-ghost btn-sm" title="Editar">
+                                            <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                                        </a>
+                                        <form asp-action="EliminarRecinto" method="post" style="display:inline;"
+                                              onsubmit="return confirm('¿Seguro que desea eliminar este recinto?')">
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-ghost btn-sm text-error">
+                                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         }

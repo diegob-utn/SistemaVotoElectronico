@@ -27,7 +27,12 @@ namespace SistemaVoto.Modelos
         [JsonIgnore]
         public Usuario? Usuario { get; set; }
 
-        public DateTime FechaParticipacionUtc { get; set; } = DateTime.UtcNow;
+        private DateTime _fechaParticipacionUtc = DateTime.UtcNow;
+        public DateTime FechaParticipacionUtc 
+        { 
+            get => _fechaParticipacionUtc; 
+            set => _fechaParticipacionUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc); 
+        }
 
         // Hash único de la transacción (auditoría)
         public string? HashTransaccion { get; set; }

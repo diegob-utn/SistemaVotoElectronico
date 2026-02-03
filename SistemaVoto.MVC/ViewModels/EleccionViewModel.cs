@@ -53,57 +53,7 @@ public class EleccionViewModel
     public string? SuccessMessage { get; set; }
 }
 
-/// <summary>
-/// ViewModel para crear/editar candidatos
-/// </summary>
-public class CandidatoViewModel
-{
-    public int Id { get; set; }
 
-    [Required(ErrorMessage = "El nombre es requerido")]
-    [StringLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres")]
-    [Display(Name = "Nombre")]
-    public string Nombre { get; set; } = null!;
-
-    [StringLength(100, ErrorMessage = "El partido no puede exceder 100 caracteres")]
-    [Display(Name = "Partido Politico / Lista")]
-    public string? PartidoPolitico { get; set; }
-
-    [Display(Name = "Foto URL")]
-    public string? FotoUrl { get; set; }
-
-    [Required(ErrorMessage = "Seleccione una eleccion")]
-    [Display(Name = "Eleccion")]
-    public int EleccionId { get; set; }
-
-    public string? EleccionTitulo { get; set; }
-    
-    [Display(Name = "Lista (para Plancha/Mixta)")]
-    public int? ListaId { get; set; }
-    
-    public string? ErrorMessage { get; set; }
-}
-
-/// <summary>
-/// ViewModel para crear/editar listas
-/// </summary>
-public class ListaViewModel
-{
-    public int Id { get; set; }
-
-    [Required(ErrorMessage = "El nombre es requerido")]
-    [StringLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres")]
-    [Display(Name = "Nombre de la Lista/Partido")]
-    public string Nombre { get; set; } = null!;
-
-    [Display(Name = "Logo URL")]
-    public string? LogoUrl { get; set; }
-
-    [Required]
-    public int EleccionId { get; set; }
-    
-    public string? ErrorMessage { get; set; }
-}
 
 /// <summary>
 /// ViewModel para vista de historial de votos

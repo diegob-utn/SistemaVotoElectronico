@@ -52,7 +52,7 @@
                         <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
                         Fecha de Inicio
                     </label>
-                    <input asp-for="FechaInicioUtc" class="form-control" type="datetime-local" />
+                    <input asp-for="FechaInicioUtc" class="form-control" type="datetime-local" step="1" asp-format="{0:yyyy-MM-ddTHH:mm:ss}" />
                     <span asp-validation-for="FechaInicioUtc" class="text-error"></span>
                 </div>
 
@@ -61,7 +61,7 @@
                         <i data-lucide="calendar-check" style="width: 16px; height: 16px;"></i>
                         Fecha de Fin
                     </label>
-                    <input asp-for="FechaFinUtc" class="form-control" type="datetime-local" />
+                    <input asp-for="FechaFinUtc" class="form-control" type="datetime-local" step="1" asp-format="{0:yyyy-MM-ddTHH:mm:ss}" />
                     <span asp-validation-for="FechaFinUtc" class="text-error"></span>
                 </div>
             </div>

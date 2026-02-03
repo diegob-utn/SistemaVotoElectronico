@@ -1,0 +1,82 @@
+@using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
+@model UbicacionViewModel
+
+@{
+    ViewData["Title"] = "Editar Ubicación";
+    var ubicaciones = ViewBag.Ubicaciones as List<Ubicacion> ?? new List<Ubicacion>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h2>
+                    <i data-lucide="map-pin" style="width: 24px; height: 24px;"></i>
+                    Editar Ubicación
+                </h2>
+                <p class="text-muted">Modifique los datos de la ubicación geográfica</p>
+            </div>
+            <div class="card-body">
+                @if (Model.ErrorMessage != null)
+                {
+                    <div class="alert alert-error mb-4">
+                        <i data-lucide="alert-circle"></i> @Model.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="EditarUbicacion" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Nombre" class="form-label">Nombre</label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Quito, Pichincha" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Tipo" class="form-label">Tipo de Ubicación</label>
+                        <select asp-for="Tipo" class="form-select">
+                            <option value="Pais">País</option>
+                            <option value="Provincia">Provincia / Estado</option>
+                            <option value="Canton">Cantón / Ciudad</option>
+                            <option value="Parroquia">Parroquia / Distrito</option>
+                            <option value="Campus">Campus</option>
+                            <option value="Facultad">Facultad</option>
+                            <option value="Departamento">Departamento</option>
+                            <option value="GENERICA">Genérica</option>
+                        </select>
+                        <span asp-validation-for="Tipo" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="ParentId" class="form-label">Ubicación Padre (Opcional)</label>
+                        <select asp-for="ParentId" class="form-select">
+                            <option value="">-- Ninguna (es raíz) --</option>
+                            @foreach (var u in ubicaciones.OrderBy(x => x.Tipo).ThenBy(x => x.Nombre))
+                            {
+                                <option value="@u.Id" selected="@(Model.ParentId == u.Id)">[@u.Tipo] @u.Nombre</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ParentId" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <a asp-action="Ubicaciones" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

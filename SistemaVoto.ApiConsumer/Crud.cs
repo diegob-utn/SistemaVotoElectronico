@@ -47,8 +47,46 @@ namespace SistemaVoto.ApiConsumer
                 {
                     var response = httpClient.GetAsync(UrlBase).Result;
                     var json = response.Content.ReadAsStringAsync().Result;
-                    var data = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResult<List<T>>>(json);
-                    return data ?? ApiResult<List<T>>.Fail("Error deserializando respuesta");
+
+                    // Parsear como JObject para inspeccionar estructura
+                    var root = Newtonsoft.Json.Linq.JObject.Parse(json);
+                    bool success = (bool?)root["success"] ?? false;
+                    
+                    if (!success)
+                    {
+                         string msg = (string?)root["message"] ?? "Error desconocido en API";
+                         return ApiResult<List<T>>.Fail(msg);
+                    }
+
+                    var dataToken = root["data"];
+                    if (dataToken == null || dataToken.Type == Newtonsoft.Json.Linq.JTokenType.Null)
+                    {
+                        return ApiResult<List<T>>.Ok(new List<T>());
+                    }
+
+                    List<T> list = new List<T>();
+
+                    // Caso 1: Array directo (Lista simple)
+                    if (dataToken is Newtonsoft.Json.Linq.JArray)
+                    {
+                        list = dataToken.ToObject<List<T>>();
+                    }
+                    // Caso 2: Objeto Paginado (tiene propiedad "items")
+                    else if (dataToken is Newtonsoft.Json.Linq.JObject && dataToken["items"] is Newtonsoft.Json.Linq.JArray itemsArray)
+                    {
+                        list = itemsArray.ToObject<List<T>>();
+                    }
+                    else
+                    {
+                        // Intentar deserializar como lista de todas formas por si acaso
+                         try {
+                              list = Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(dataToken.ToString());
+                         } catch {
+                              return ApiResult<List<T>>.Fail("Formato de respuesta no reconocido (Ni lista ni paginado)");
+                         }
+                    }
+
+                    return ApiResult<List<T>>.Ok(list);
                 }
             }
             catch (Exception ex)

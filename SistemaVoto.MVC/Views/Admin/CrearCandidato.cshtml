@@ -1,189 +1,124 @@
-@using SistemaVoto.Modelos
 @using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
 @model CandidatoViewModel
+
 @{
-    ViewData["Title"] = "Crear Candidato";
-    var elecciones = ViewBag.Elecciones as List<Eleccion> ?? new List<Eleccion>();
-    var listas = ViewBag.Listas as List<Lista> ?? new List<Lista>();
+    ViewData["Title"] = "Nuevo Candidato";
+    var elecciones = ViewBag.Elecciones as List<Eleccion>;
 }
 
-<div class="form-container">
-    <div class="form-card glass-card">
-        <div class="form-header">
-            <a href="@Url.Action("Candidatos", new { eleccionId = Model.EleccionId > 0 ? Model.EleccionId : (int?)null })" class="btn btn-ghost btn-sm">
-                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
-                Volver
-            </a>
-            <h1>
-                <i data-lucide="user-plus" style="width: 32px; height: 32px;"></i>
-                Registrar Candidato
-            </h1>
-            <p class="text-muted">Agregue un nuevo candidato al proceso electoral</p>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h2>Registrar Candidato</h2>
+                @if (Model.EleccionId > 0)
+                {
+                    <p class="text-muted">Para elección: <strong>@Model.EleccionTitulo</strong></p>
+                }
+                else
+                {
+                     <p class="text-muted">Registre un candidato en el sistema</p>
+                }
+            </div>
+            <div class="card-body">
+                @if (Model.ErrorMessage != null)
+                {
+                    <div class="alert alert-error mb-4">
+                        <i data-lucide="alert-circle"></i> @Model.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="CrearCandidato" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="RequiereLista" />
+
+                    @if (Model.EleccionId > 0)
+                    {
+                        <input type="hidden" asp-for="EleccionId" />
+                    }
+                    else
+                    {
+                        <div class="form-group mb-3">
+                            <label asp-for="EleccionId" class="control-label font-bold">Seleccione Elección</label>
+                            <select asp-for="EleccionId" class="form-select" onchange="this.form.submit()" name="eleccionIdSelector">
+                                <option value="">-- Seleccione una Elección --</option>
+                                @if (elecciones != null)
+                                {
+                                    foreach(var e in elecciones)
+                                    {
+                                        <option value="@e.Id" selected="@(Model.EleccionId == e.Id)">@e.Titulo (@e.Tipo)</option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="EleccionId" class="text-danger"></span>
+                            <small class="text-muted">Seleccione una elección para cargar opciones de listas si aplica.</small>
+                            
+                            @* Script para recargar pagina al cambiar eleccion y cargar listas *@
+                            <script>
+                                document.querySelector('select[name="eleccionIdSelector"]').addEventListener('change', function() {
+                                    var id = this.value;
+                                    if(id) {
+                                        window.location.href = '/Admin/CrearCandidato?eleccionId=' + id;
+                                    }
+                                });
+                            </script>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Nombre" class="form-label">Nombre Completo</label>
+                            <input asp-for="Nombre" class="form-control" placeholder="Nombre del candidato" />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PartidoPolitico" class="form-label">Partido / Movimiento</label>
+                            <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido" />
+                            <span asp-validation-for="PartidoPolitico" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    @if (Model.RequiereLista)
+                    {
+                        <div class="form-group mb-3 p-3 bg-base-200 rounded">
+                            <label asp-for="ListaId" class="form-label font-bold">Seleccione la Lista (Requerido)</label>
+                            <select asp-for="ListaId" class="form-select" asp-items="@(new SelectList(ViewBag.Listas, "Id", "Nombre"))">
+                                <option value="">-- Seleccione una Lista --</option>
+                            </select>
+                            <span asp-validation-for="ListaId" class="text-danger"></span>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="FotoUrl" class="form-label">Foto URL (Opcional)</label>
+                        <input asp-for="FotoUrl" class="form-control" placeholder="https://..." />
+                        <span asp-validation-for="FotoUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Propuestas" class="form-label">Propuestas (Breve descripción)</label>
+                        <textarea asp-for="Propuestas" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Propuestas" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <a asp-action="Candidatos" asp-route-eleccionId="@(Model.EleccionId > 0 ? Model.EleccionId : "")" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="user-plus" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+                            Registrar Candidato
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-error">
-                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
-                @Model.ErrorMessage
-            </div>
-        }
-
-        <form asp-action="CrearCandidato" method="post">
-            <div class="form-group">
-                <label asp-for="EleccionId" class="form-label">
-                    <i data-lucide="vote" style="width: 16px; height: 16px;"></i>
-                    Elección
-                </label>
-                <select asp-for="EleccionId" class="form-control" id="selectEleccion" onchange="filterListas()">
-                    <option value="">Seleccione una elección...</option>
-                    @foreach (var eleccion in elecciones)
-                    {
-                        <option value="@eleccion.Id" data-tipo="@eleccion.Tipo" selected="@(Model.EleccionId == eleccion.Id)">
-                            @eleccion.Titulo (@eleccion.Tipo)
-                        </option>
-                    }
-                </select>
-                <span asp-validation-for="EleccionId" class="text-error"></span>
-            </div>
-
-            <div id="listaContainer" class="form-group" style="display:none;">
-                <label asp-for="ListaId" class="form-label">
-                    <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
-                    Lista / Partido (Para Plancha/Mixta)
-                </label>
-                <select asp-for="ListaId" class="form-control" id="selectLista">
-                    <option value="">-- Candidato Independiente / Sin Lista --</option>
-                    @foreach (var lista in listas)
-                    {
-                        <option value="@lista.Id" data-eleccion-id="@lista.EleccionId" selected="@(Model.ListaId == lista.Id)">
-                            @lista.Nombre
-                        </option>
-                    }
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Nombre" class="form-label">
-                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-                    Nombre del Candidato
-                </label>
-                <input asp-for="Nombre" class="form-control" placeholder="Nombre completo" />
-                <span asp-validation-for="Nombre" class="text-error"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="PartidoPolitico" class="form-label">
-                    <i data-lucide="flag" style="width: 16px; height: 16px;"></i>
-                    Partido Político / Organización
-                </label>
-                <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido o lista" />
-                <p class="text-muted text-xs mt-1">Si pertenece a una lista, se recomienda usar el mismo nombre.</p>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="FotoUrl" class="form-label">
-                    <i data-lucide="image" style="width: 16px; height: 16px;"></i>
-                    URL de Foto (Opcional)
-                </label>
-                <input asp-for="FotoUrl" class="form-control" type="url" placeholder="https://..." />
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
-                    Registrar Candidato
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
-<style>
-    .form-container {
-        max-width: 600px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-    }
-    
-    .form-card {
-        padding: 2.5rem;
-    }
-    
-    .form-header {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .form-header h1 {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        margin: 1rem 0 0.5rem;
-    }
-    
-    .form-actions {
-        margin-top: 2rem;
-        text-align: center;
-    }
-</style>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            lucide.createIcons();
-            filterListas(); // Run on load
-        });
-
-        function filterListas() {
-            var eleccionId = document.getElementById('selectEleccion').value;
-            var eleccionOption = document.querySelector('#selectEleccion option:checked');
-            var tipo = eleccionOption ? eleccionOption.getAttribute('data-tipo') : '';
-            var listaContainer = document.getElementById('listaContainer');
-            var selectLista = document.getElementById('selectLista');
-            var options = selectLista.options;
-
-            // Mostrar container solo si es Plancha o Mixta (o si simplemente hay eleccion seleccionada para no complicar con tipos por string)
-            // Mejor verificamos el string del tipo.
-            // TipoEleccion entums: 0 (Nominal), 1 (Plancha), 2 (Mixta)
-            // Pero en data-tipo viene el valor string del enum si toString() por defecto, o int si fue serializado como int.
-            // Verifiquemos en runtime. Asumamos que si hay eleccion, intentamos filtrar listas.
-            
-            if (eleccionId) {
-                // Filtrar opciones
-                var hasListas = false;
-                for (var i = 0; i < options.length; i++) {
-                    var option = options[i];
-                    if (option.value === "") continue; // Skip default option
-
-                    var optionEleccionId = option.getAttribute('data-eleccion-id');
-                    if (optionEleccionId === eleccionId) {
-                        option.style.display = 'block';
-                        hasListas = true;
-                    } else {
-                        option.style.display = 'none';
-                    }
-                }
-                
-                // Reset selection if hidden
-                if (selectLista.selectedOptions.length > 0 && selectLista.selectedOptions[0].style.display === 'none') {
-                    selectLista.value = "";
-                }
-
-                // Mostrar container solo si el tipo lo permite o si hay listas disponibles
-                // Nominal = 0, Plancha = 1, Mixta = 2
-                // Si el backend renderiza el enum como string "Nominal", "Plancha"...
-                
-                if (tipo === 'Nominal' || tipo === '0') {
-                    listaContainer.style.display = 'none';
-                } else {
-                    listaContainer.style.display = 'block';
-                }
-            } else {
-                listaContainer.style.display = 'none';
-            }
-        }
+        lucide.createIcons();
     </script>
 }

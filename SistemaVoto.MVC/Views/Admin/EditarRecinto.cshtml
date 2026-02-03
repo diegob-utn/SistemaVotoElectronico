@@ -1,0 +1,73 @@
+@using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
+@model RecintoViewModel
+
+@{
+    ViewData["Title"] = "Editar Recinto";
+    var ubicaciones = ViewBag.Ubicaciones as List<Ubicacion> ?? new List<Ubicacion>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h2>
+                    <i data-lucide="building" style="width: 24px; height: 24px;"></i>
+                    Editar Recinto Electoral
+                </h2>
+                <p class="text-muted">Modifique los datos del centro de votación</p>
+            </div>
+            <div class="card-body">
+                @if (Model.ErrorMessage != null)
+                {
+                    <div class="alert alert-error mb-4">
+                        <i data-lucide="alert-circle"></i> @Model.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="EditarRecinto" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Nombre" class="form-label">Nombre del Recinto</label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Unidad Educativa Central" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Direccion" class="form-label">Dirección</label>
+                        <input asp-for="Direccion" class="form-control" placeholder="Ej: Av. Principal 123" />
+                        <span asp-validation-for="Direccion" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="UbicacionId" class="form-label">Ubicación Geográfica</label>
+                        <select asp-for="UbicacionId" class="form-select">
+                            <option value="">-- Seleccione ubicación --</option>
+                            @foreach (var u in ubicaciones.OrderBy(x => x.Tipo).ThenBy(x => x.Nombre))
+                            {
+                                <option value="@u.Id" selected="@(Model.UbicacionId == u.Id)">[@u.Tipo] @u.Nombre</option>
+                            }
+                        </select>
+                        <span asp-validation-for="UbicacionId" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <a asp-action="Recintos" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}
