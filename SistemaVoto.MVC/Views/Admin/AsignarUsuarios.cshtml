@@ -1,0 +1,215 @@
+@model SistemaVoto.MVC.ViewModels.AsignarUsuariosViewModel
+@{
+    ViewData["Title"] = "Asignar Usuarios";
+}
+
+<div class="container fade-in">
+    <div class="header-action">
+        <div>
+            <h1><i data-lucide="users" class="text-primary"></i> Asignar Usuarios</h1>
+            <p class="text-muted">Elección: <strong>@Model.EleccionTitulo</strong></p>
+        </div>
+        <div class="stats-box">
+             <div class="stat-item">
+                <span class="stat-label">Asignados</span>
+                <span class="stat-value" id="countAsignados">@Model.UsuariosAsignadosCount</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Cupo Máximo</span>
+                <span class="stat-value">@(Model.CupoMaximo == 0 ? "∞" : Model.CupoMaximo.ToString())</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar glass-card">
+         <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="searchInput" placeholder="Buscar usuario por email..." onkeyup="filterUsers()">
+        </div>
+        <a href="/Admin/Elecciones" class="btn btn-ghost">Volver</a>
+    </div>
+
+    <div class="table-container glass-card">
+        <table class="table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Usuarios)
+                {
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <i data-lucide="user"></i>
+                                <span>@user.Email</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge @(user.Asignado ? "badge-success" : "badge-secondary")" id="badge-@user.Id">
+                                @(user.Asignado ? "Asignado" : "No Asignado")
+                            </span>
+                        </td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" onchange="toggleAsignacion('@Model.EleccionId', '@user.Id', this)" @(user.Asignado ? "checked" : "")>
+                                <span class="slider round"></span>
+                            </label>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .stats-box {
+        display: flex;
+        gap: 2rem;
+        background: var(--glass-bg);
+        padding: 0.5rem 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+    }
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+    .stat-value { font-weight: bold; font-size: 1.2rem; }
+    
+    .user-info { display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Switch Style */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 24px;
+    }
+
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px var(--primary);
+    }
+
+    input:checked + .slider:before {
+      -webkit-transform: translateX(16px);
+      -ms-transform: translateX(16px);
+      transform: translateX(16px);
+    }
+
+    .slider.round {
+      border-radius: 34px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function filterUsers() {
+            var input = document.getElementById("searchInput");
+            var filter = input.value.toUpperCase();
+            var table = document.getElementById("usersTable");
+            var tr = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < tr.length; i++) {
+                var td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    var txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        async function toggleAsignacion(eleccionId, userId, checkbox) {
+            const asignar = checkbox.checked;
+            
+            try {
+                const response = await fetch('/Admin/ToggleAsignacion', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: `eleccionId=${eleccionId}&usuarioId=${userId}&asignar=${asignar}`
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const badge = document.getElementById(`badge-${userId}`);
+                    if (asignar) {
+                        badge.className = "badge badge-success";
+                        badge.innerText = "Asignado";
+                        updateCount(1);
+                    } else {
+                        badge.className = "badge badge-secondary";
+                        badge.innerText = "No Asignado";
+                        updateCount(-1);
+                    }
+                } else {
+                    checkbox.checked = !asignar; // Revert
+                    alert(data.message || "Error al actualizar asignación");
+                }
+            } catch (error) {
+                console.error(error);
+                checkbox.checked = !asignar; // Revert
+                alert("Error de conexión");
+            }
+        }
+
+        function updateCount(delta) {
+            const el = document.getElementById('countAsignados');
+            let val = parseInt(el.innerText);
+            el.innerText = val + delta;
+        }
+
+        lucide.createIcons();
+    </script>
+}

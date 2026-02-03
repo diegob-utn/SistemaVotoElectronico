@@ -128,9 +128,18 @@ public class EleccionesController : Controller
             TempData["Error"] = "Esta elección no está disponible para votar";
             return RedirectToAction("Index");
         }
+        
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        
+        // Verificar Control de Acceso (Fase 10)
+        if (!string.IsNullOrEmpty(userId) && !_crud.UsuarioTieneAcceso(id, userId))
+        {
+             TempData["Error"] = "Usted no está autorizado para votar en esta elección (Requiere asignación).";
+             return RedirectToAction("Index");
+        }
 
         // Verificar si ya ha votado
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        // var userId ya fue declarado arriba
         if (!string.IsNullOrEmpty(userId) && _crud.HasVoted(id, userId))
         {
              TempData["Error"] = "Usted ya ha votado en esta elección.";
@@ -194,6 +203,13 @@ public class EleccionesController : Controller
 
         // Verificar si ya ha votado (usando Identity User Id)
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        // Verificar Control de Acceso (Fase 10)
+        if (!string.IsNullOrEmpty(userId) && !_crud.UsuarioTieneAcceso(model.EleccionId, userId))
+        {
+             TempData["Error"] = "Usted no está autorizado para votar en esta elección.";
+             return RedirectToAction("Index");
+        }
 
         // Validar si el usuario corresponde a esta elección (si es votante generado)
         var userName = User.Identity?.Name;

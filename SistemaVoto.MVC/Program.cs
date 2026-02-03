@@ -69,6 +69,10 @@ namespace SistemaVoto.MVC
             builder.Services.AddScoped<JwtAuthService>();
             builder.Services.AddScoped<CalculoEscanosService>();
             builder.Services.AddScoped<LocalCrudService>();
+            
+            // Servicios en segundo plano (Fase 11)
+            builder.Services.AddHostedService<ElectionBackgroundService>();
+            builder.Services.AddScoped<ElectionManagerService>();
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();

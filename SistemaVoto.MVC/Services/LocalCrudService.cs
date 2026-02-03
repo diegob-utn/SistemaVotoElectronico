@@ -325,4 +325,81 @@ public class LocalCrudService
             .Select(h => h.EleccionId)
             .ToHashSet();
     }
+
+    // ==================== ELECCION USUARIOS (FASE 10) ====================
+
+    /// <summary>
+    /// Asigna un usuario a una elección privada. Retorna false si ya existe o cupo lleno.
+    /// </summary>
+    public bool AsignarUsuarioAEleccion(int eleccionId, string usuarioId)
+    {
+        // Verificar si ya existe
+        if (_context.EleccionUsuarios.Any(x => x.EleccionId == eleccionId && x.UsuarioId == usuarioId))
+        {
+            return true; // Ya asignado
+        }
+
+        var eleccion = _context.Elecciones.Find(eleccionId);
+        if (eleccion == null) return false;
+
+        // Verificar cupo si aplica
+        if (eleccion.CupoMaximo > 0)
+        {
+            var count = _context.EleccionUsuarios.Count(x => x.EleccionId == eleccionId);
+            if (count >= eleccion.CupoMaximo) return false; // Cupo lleno
+        }
+
+        var asignacion = new EleccionUsuario
+        {
+            EleccionId = eleccionId,
+            UsuarioId = usuarioId,
+            FechaAsignacion = DateTime.UtcNow
+        };
+
+        _context.EleccionUsuarios.Add(asignacion);
+        _context.SaveChanges();
+        return true;
+    }
+
+    /// <summary>
+    /// Remueve un usuario de una elección
+    /// </summary>
+    public bool RemoverUsuarioDeEleccion(int eleccionId, string usuarioId)
+    {
+        var relacion = _context.EleccionUsuarios.Find(eleccionId, usuarioId);
+        if (relacion == null) return false;
+
+        _context.EleccionUsuarios.Remove(relacion);
+        _context.SaveChanges();
+        return true;
+    }
+
+    /// <summary>
+    /// Verifica si un usuario tiene acceso a una elección (Pública o Asignado)
+    /// </summary>
+    public bool UsuarioTieneAcceso(int eleccionId, string usuarioId)
+    {
+        var eleccion = _context.Elecciones.Find(eleccionId);
+        if (eleccion == null) return false;
+
+        // Si es pública, acceso total
+        if (eleccion.Acceso == TipoAcceso.Publica) return true;
+        
+        // Si es generada, acceso total (validación se hace por login de usuario generado)
+        if (eleccion.Acceso == TipoAcceso.Generada) return true;
+
+        // Si es privada, verificar tabla
+        return _context.EleccionUsuarios.Any(x => x.EleccionId == eleccionId && x.UsuarioId == usuarioId);
+    }
+    
+    /// <summary>
+    /// Obtiene usuarios asignados
+    /// </summary>
+    public List<EleccionUsuario> GetUsuariosAsignados(int eleccionId)
+    {
+        return _context.EleccionUsuarios
+            .Include(x => x.Usuario)
+            .Where(x => x.EleccionId == eleccionId)
+            .ToList();
+    }
 }

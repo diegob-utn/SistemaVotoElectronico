@@ -48,6 +48,12 @@ namespace SistemaVoto.Modelos
         public bool UsaUbicacion { get; set; } = false;
         public ModoUbicacion ModoUbicacion { get; set; } = ModoUbicacion.Ninguna;
 
+        // Control de Acceso (Fase 10)
+        public TipoAcceso Acceso { get; set; } = TipoAcceso.Generada;
+        public int CupoMaximo { get; set; } // 0 = Sin limite
+        
+        public ICollection<EleccionUsuario> UsuariosAsignados { get; set; } = new List<EleccionUsuario>();
+
         public ICollection<Lista> Listas { get; set; } = new List<Lista>();
         public ICollection<Candidato> Candidatos { get; set; } = new List<Candidato>();
 

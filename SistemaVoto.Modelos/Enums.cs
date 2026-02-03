@@ -26,4 +26,11 @@ namespace SistemaVoto.Modelos
         PorUbicacion = 1, // Por nodo del árbol (provincia/campus/facultad/etc)
         PorRecinto = 2    // Por recinto electoral
     }
+
+    public enum TipoAcceso
+    {
+        Generada = 0, // Credenciales generadas por el sistema (Legacy)
+        Privada = 1,  // Usuarios asignados manualmente (Lista cerrada)
+        Publica = 2   // Cualquier usuario registrado puede votar
+    }
 }

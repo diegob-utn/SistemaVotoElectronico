@@ -11,13 +11,68 @@ public class AuthController : Controller
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly UserManager<IdentityUser> _userManager;
-
+    // Injecting context to save custom user data if needed (e.g. custom name field if extending IdentityUser)
+    // For now we assume standard IdentityUser or we might need to cast to our Usuario model if we were using custom storage.
+    // However, the current setup seems to use standard IdentityUser for Auth, and a separate Usuario model in Modelos.
+    // We need to verify if we need to sync them.
+    // Looking at AdminController, it creates IdentityUser and that's it. It doesn't seem to sync to a 'Usuario' table manually.
+    // But Modelos/Usuario.cs exists. Let's check if there is a sync mechanism. 
+    // Wait, AdminController.CrearEleccion just creates IdentityUser. 
+    // Let's stick to standard IdentityUser registration for now to match existng pattern.
+    
     public AuthController(
         SignInManager<IdentityUser> signInManager,
         UserManager<IdentityUser> userManager)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+    }
+
+    /// <summary>
+    /// Muestra el formulario de registro
+    /// </summary>
+    [HttpGet]
+    public IActionResult Register()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToHome();
+        }
+        return View(new RegisterViewModel());
+    }
+
+    /// <summary>
+    /// Procesa el registro de un nuevo usuario
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var user = new IdentityUser { UserName = model.Email, Email = model.Email };
+        var result = await _userManager.CreateAsync(user, model.Password);
+
+        if (result.Succeeded)
+        {
+            // Asignar rol por defecto
+            await _userManager.AddToRoleAsync(user, "Usuario");
+            
+            // Auto-login
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return RedirectToAction("Index", "Elecciones");
+        }
+
+        foreach (var error in result.Errors)
+        {
+            // Traducir errores comunes si es necesario
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+
+        return View(model);
     }
 
     /// <summary>

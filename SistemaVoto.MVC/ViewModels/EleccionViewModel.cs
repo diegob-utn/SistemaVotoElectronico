@@ -29,13 +29,21 @@ public class EleccionViewModel
     [DataType(DataType.DateTime)]
     public DateTime FechaFinUtc { get; set; } = DateTime.UtcNow.AddDays(8);
 
-    [Required(ErrorMessage = "Seleccione un tipo de eleccion")]
+    [Required(ErrorMessage = "El tipo de elección es requerido")]
     [Display(Name = "Tipo de Eleccion")]
     public string Tipo { get; set; } = "Nominal";
 
-    [Range(1, 100, ErrorMessage = "El numero de escanos debe estar entre 1 y 100")]
-    [Display(Name = "Numero de Escanos")]
-    public int NumEscanos { get; set; } = 10;
+    [Display(Name = "Número de Escaños")]
+    [Range(0, 1000, ErrorMessage = "El número debe ser mayor o igual a 0")]
+    public int NumEscanos { get; set; }
+
+    // Control de Acceso (Fase 10)
+    [Display(Name = "Tipo de Acceso")]
+    public string Acceso { get; set; } = "Generada"; // Generada, Privada, Publica
+
+    [Display(Name = "Cupo Máximo de Usuarios (0 = Ilimitado)")]
+    [Range(0, 100000, ErrorMessage = "El cupo debe ser mayor o igual a 0")]
+    public int CupoMaximo { get; set; } = 0;
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
@@ -54,6 +62,27 @@ public class EleccionViewModel
 }
 
 
+
+
+/// <summary>
+/// ViewModel para asignar usuarios a una elección privada
+/// </summary>
+public class AsignarUsuariosViewModel
+{
+    public int EleccionId { get; set; }
+    public string EleccionTitulo { get; set; } = null!;
+    public int CupoMaximo { get; set; }
+    public int UsuariosAsignadosCount { get; set; }
+    public List<UsuarioAsignacionDto> Usuarios { get; set; } = new();
+}
+
+public class UsuarioAsignacionDto
+{
+    public string Id { get; set; } = null!;
+    public string Email { get; set; } = null!;
+    public string Nombre { get; set; } = null!;
+    public bool Asignado { get; set; }
+}
 
 /// <summary>
 /// ViewModel para vista de historial de votos

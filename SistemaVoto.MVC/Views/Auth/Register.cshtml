@@ -1,0 +1,76 @@
+@model SistemaVoto.MVC.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Registro";
+    Layout = "_LayoutAuth";
+}
+
+<div class="auth-header">
+    <div class="auth-icon">
+        <i data-lucide="user-plus"></i>
+    </div>
+    <h2>Crear Cuenta</h2>
+    <p>Únete al sistema de votación electrónica</p>
+</div>
+
+<form asp-action="Register" method="post" class="auth-form">
+    @if (!string.IsNullOrEmpty(Model?.ErrorMessage))
+    {
+        <div class="alert alert-error">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div asp-validation-summary="All" class="text-danger" style="margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+    <div class="form-group">
+        <label asp-for="NombreCompleto"></label>
+        <div class="input-with-icon">
+            <i data-lucide="user" class="input-icon"></i>
+            <input asp-for="NombreCompleto" class="form-control" placeholder="Tu nombre completo" />
+        </div>
+        <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <div class="input-with-icon">
+            <i data-lucide="mail" class="input-icon"></i>
+            <input asp-for="Email" class="form-control" placeholder="nombre@ejemplo.com" />
+        </div>
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Password"></label>
+        <div class="input-with-icon">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input asp-for="Password" class="form-control" placeholder="••••••••" />
+        </div>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ConfirmPassword"></label>
+        <div class="input-with-icon">
+            <i data-lucide="check-circle" class="input-icon"></i>
+            <input asp-for="ConfirmPassword" class="form-control" placeholder="••••••••" />
+        </div>
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">
+        Registrarse
+    </button>
+
+    <div class="auth-footer">
+        <p>¿Ya tienes una cuenta? <a asp-action="Login">Iniciar Sesión</a></p>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        lucide.createIcons();
+    </script>
+}

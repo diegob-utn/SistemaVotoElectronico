@@ -14,18 +14,17 @@ namespace SistemaVoto.MVC.Controllers;
 [Authorize(Roles = "Administrador")]
 public class AdminController : Controller
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly LocalCrudService _crud;
+    private readonly UserManager<IdentityUser> _userManager;
+    private readonly ElectionManagerService _electionManager;
+    private readonly IWebHostEnvironment _env;
 
-    public AdminController(
-        UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager,
-        LocalCrudService crud)
+    public AdminController(LocalCrudService crud, UserManager<IdentityUser> userManager, ElectionManagerService electionManager, IWebHostEnvironment env)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
         _crud = crud;
+        _userManager = userManager;
+        _electionManager = electionManager;
+        _env = env;
     }
 
     #region Dashboard
@@ -114,9 +113,28 @@ public class AdminController : Controller
             "Mixta" => TipoEleccion.Mixta,
             _ => TipoEleccion.Nominal
         };
+        
+        TipoAcceso acceso = model.Acceso switch
+        {
+            "Privada" => TipoAcceso.Privada,
+            "Publica" => TipoAcceso.Publica,
+            _ => TipoAcceso.Generada
+        };
 
         int numEscanos = Math.Max(1, model.NumEscanos);
-        int usuariosAGenerar = model.NumEscanos; // Usamos el input del usuario para decidir cuántos crear
+        // Solo generar usuarios si es acceso 'Generada'
+        // NOTA: En el sistema original, se usaba 'NumEscanos' como cantidad de usuarios a generar si era Nominal.
+        // Ahora, si es 'Generada', usaremos 'CupoMaximo' si > 0, o 'NumEscanos' como fallback para mantener compatibilidad,
+        // o mejor, asumimos que para 'Generada' el admin debe especificar cuantos.
+        // Vamos a usar 'CupoMaximo' como el campo para "Cantidad a Generar" en modo "Generada",
+        // y para "Limite de Usuarios" en modo "Privada".
+        
+        // Si el usuario no puso CupoMaximo en modo Generada, usamos NumEscanos (comportamiento legacy para Nominal)
+        int usuariosAGenerar = 0;
+        if (acceso == TipoAcceso.Generada)
+        {
+            usuariosAGenerar = model.CupoMaximo > 0 ? model.CupoMaximo : numEscanos;
+        }
 
         var eleccion = new Eleccion
         {
@@ -130,13 +148,42 @@ public class AdminController : Controller
             Activo = model.Activo,
             Estado = model.Activo ? EstadoEleccion.Activa : EstadoEleccion.Pendiente,
             UsaUbicacion = model.UsaUbicacion,
-            ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna
+            ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna,
+            Acceso = acceso,
+            CupoMaximo = model.CupoMaximo
         };
 
-        Eleccion? createdEleccion = null;
         try
         {
-            createdEleccion = _crud.CreateEleccion(eleccion);
+            // Use Domain Service for complex creation logic (Returns credentials if generated)
+            var generatedCredentials = await _electionManager.CreateElectionAsync(eleccion, usuariosAGenerar);
+
+            if (model.UsaUbicacion && model.UbicacionesSeleccionadas != null && model.UbicacionesSeleccionadas.Any())
+            {
+                foreach (var ubicacionId in model.UbicacionesSeleccionadas)
+                {
+                    _crud.CreateEleccionUbicacion(new EleccionUbicacion 
+                    { 
+                        EleccionId = eleccion.Id, 
+                        UbicacionId = ubicacionId 
+                    });
+                }
+            }
+            
+            // Si hay credenciales generadas, mostrar vista
+            if (generatedCredentials.Any())
+            {
+                var credsModel = new CredencialesGeneradasViewModel
+                {
+                    EleccionId = eleccion.Id,
+                    TituloEleccion = eleccion.Titulo,
+                    Credenciales = generatedCredentials
+                };
+                return View("CredencialesGeneradas", credsModel);
+            }
+
+            TempData["Success"] = "Elección creada exitosamente";
+            return RedirectToAction("Elecciones");
         }
         catch (Exception ex)
         {
@@ -144,82 +191,12 @@ public class AdminController : Controller
             ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
             return View(model);
         }
-
-        if (model.UsaUbicacion && model.UbicacionesSeleccionadas != null && model.UbicacionesSeleccionadas.Any())
-        {
-             foreach(var ubicacionId in model.UbicacionesSeleccionadas)
-             {
-                 var relacion = new EleccionUbicacion 
-                 { 
-                     EleccionId = createdEleccion.Id, 
-                     UbicacionId = ubicacionId 
-                 };
-                 _crud.CreateEleccionUbicacion(relacion);
-             }
-        }
-
-        // Generar usuarios automaticos con formato email
-        var usuariosGenerados = new List<UsuarioCredencial>();
-        if (usuariosAGenerar > 0)
-        {
-            for(int i = 0; i < usuariosAGenerar; i++)
-            {
-                var password = GenerateRandomPassword();
-                // Usar email como username para que funcione el login
-                var email = $"votante_{createdEleccion.Id}_{i+1}@sistema.local";
-                var user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
-                
-                var createResult = await _userManager.CreateAsync(user, password);
-                if (createResult.Succeeded)
-                {
-                    await _userManager.AddToRoleAsync(user, "Usuario");
-                    usuariosGenerados.Add(new UsuarioCredencial { Username = email, Password = password });
-                }
-            }
-        }
-
-        if (usuariosGenerados.Any())
-        {
-            var credsModel = new CredencialesGeneradasViewModel
-            {
-                EleccionId = createdEleccion.Id,
-                TituloEleccion = createdEleccion.Titulo,
-                Credenciales = usuariosGenerados
-            };
-            return View("CredencialesGeneradas", credsModel);
-        }
-
-        TempData["Success"] = "Eleccion creada exitosamente";
-        return RedirectToAction("Elecciones");
     }
 
-    private string GenerateRandomPassword()
-    {
-        // Generar contraseña que cumpla políticas de Identity
-        // Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 dígito, 1 especial
-        var random = new Random();
-        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const string lower = "abcdefghijklmnopqrstuvwxyz";
-        const string digits = "0123456789";
-        const string special = "!@#$%&*";
-        
-        // Garantizar al menos uno de cada tipo
-        var password = new char[10];
-        password[0] = upper[random.Next(upper.Length)];
-        password[1] = lower[random.Next(lower.Length)];
-        password[2] = digits[random.Next(digits.Length)];
-        password[3] = special[random.Next(special.Length)];
-        
-        // Llenar el resto con caracteres aleatorios de todos los tipos
-        var allChars = upper + lower + digits + special;
-        for (int i = 4; i < password.Length; i++)
-        {
-            password[i] = allChars[random.Next(allChars.Length)];
-        }
-        
-        // Mezclar para que no sea predecible
-        return new string(password.OrderBy(_ => random.Next()).ToArray());
-    }
+
+
+    // GenerateRandomPassword moved to ElectionManagerService to adhere to SOLID / DRY.
+
 
     /// <summary>
     /// Formulario para editar eleccion existente
@@ -292,7 +269,9 @@ public class AdminController : Controller
             Activo = model.Activo,
             Estado = model.Activo ? EstadoEleccion.Activa : EstadoEleccion.Pendiente,
             UsaUbicacion = model.UsaUbicacion,
-            ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna
+            ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna,
+            Acceso = model.Acceso switch { "Privada" => TipoAcceso.Privada, "Publica" => TipoAcceso.Publica, _ => TipoAcceso.Generada },
+            CupoMaximo = model.CupoMaximo
         };
 
         try
@@ -1191,6 +1170,64 @@ public class AdminController : Controller
     }
 
     #endregion
+    // ==================== ASIGNACION DE USUARIOS (FASE 10) ====================
+
+    [HttpGet]
+    public async Task<IActionResult> AsignarUsuarios(int id)
+    {
+        var eleccion = _crud.GetEleccion(id);
+        if (eleccion == null) return RedirectToAction("Elecciones");
+
+        if (eleccion.Acceso != TipoAcceso.Privada)
+        {
+            TempData["Error"] = "Solo se pueden asignar usuarios a elecciones Privadas.";
+            return RedirectToAction("Elecciones");
+        }
+
+        // Obtener todos los usuarios "Usuario"
+        var users = await _userManager.GetUsersInRoleAsync("Usuario");
+        var asignados = _crud.GetUsuariosAsignados(id).Select(x => x.UsuarioId).ToHashSet();
+
+        var model = new AsignarUsuariosViewModel
+        {
+            EleccionId = id,
+            EleccionTitulo = eleccion.Titulo,
+            CupoMaximo = eleccion.CupoMaximo,
+            UsuariosAsignadosCount = asignados.Count,
+            Usuarios = users.Select(u => new UsuarioAsignacionDto
+            {
+                Id = u.Id,
+                Email = u.Email,
+                Nombre = u.UserName,
+                Asignado = asignados.Contains(u.Id)
+            }).ToList()
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public IActionResult ToggleAsignacion(int eleccionId, string usuarioId, bool asignar)
+    {
+        try
+        {
+            if (asignar)
+            {
+                var success = _crud.AsignarUsuarioAEleccion(eleccionId, usuarioId);
+                if (!success) return Json(new { success = false, message = "Error: Cupo lleno o usuario no encontrado." });
+            }
+            else
+            {
+                _crud.RemoverUsuarioDeEleccion(eleccionId, usuarioId);
+            }
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
 }
 
 // ViewModels locales para Dashboard

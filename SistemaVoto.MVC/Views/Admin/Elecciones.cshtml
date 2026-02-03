@@ -100,6 +100,12 @@
                                         <a href="/Admin/EditarEleccion/@eleccion.Id" class="btn btn-ghost btn-sm" title="Editar">
                                             <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
                                         </a>
+                                        @if (eleccion.Acceso == TipoAcceso.Privada)
+                                        {
+                                            <a href="/Admin/AsignarUsuarios/@eleccion.Id" class="btn btn-ghost btn-sm" title="Asignar Usuarios">
+                                                <i data-lucide="user-check" style="width: 16px; height: 16px;"></i>
+                                            </a>
+                                        }
                                         <a href="/Admin/Candidatos?eleccionId=@eleccion.Id" class="btn btn-ghost btn-sm" title="Candidatos">
                                             <i data-lucide="users" style="width: 16px; height: 16px;"></i>
                                         </a>

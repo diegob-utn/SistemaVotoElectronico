@@ -23,6 +23,7 @@ namespace SistemaVoto.Data.Data
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
         public DbSet<RecintoElectoral> Recintos => Set<RecintoElectoral>();
         public DbSet<EleccionUbicacion> EleccionUbicaciones => Set<EleccionUbicacion>();
+        public DbSet<EleccionUsuario> EleccionUsuarios => Set<EleccionUsuario>();
 
         protected override void OnModelCreating(ModelBuilder mb)
         {
@@ -137,6 +138,24 @@ namespace SistemaVoto.Data.Data
               .OnDelete(DeleteBehavior.Cascade);
 
             // -------------------------
+            // Relacion Eleccion-Usuario (Asignacion Manual)
+            // -------------------------
+            mb.Entity<EleccionUsuario>()
+              .HasKey(eu => new { eu.EleccionId, eu.UsuarioId });
+
+            mb.Entity<EleccionUsuario>()
+              .HasOne(eu => eu.Eleccion)
+              .WithMany(e => e.UsuariosAsignados)
+              .HasForeignKey(eu => eu.EleccionId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+            mb.Entity<EleccionUsuario>()
+              .HasOne(eu => eu.Usuario)
+              .WithMany()
+              .HasForeignKey(eu => eu.UsuarioId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+            // -------------------------
             //  CHECK constraints (Postgres) CORRECTOS
             // -------------------------
             mb.Entity<Voto>().ToTable(t => t.HasCheckConstraint(
@@ -144,10 +163,11 @@ namespace SistemaVoto.Data.Data
                 "(\"CandidatoId\" IS NOT NULL AND \"ListaId\" IS NULL) OR (\"CandidatoId\" IS NULL AND \"ListaId\" IS NOT NULL)"
             ));
 
-            mb.Entity<Eleccion>().ToTable(t => t.HasCheckConstraint(
-                "CK_Eleccion_EscanosSegunTipo",
-                "(\"Tipo\" = 0 AND \"NumEscanos\" = 0) OR ((\"Tipo\" = 1 OR \"Tipo\" = 2) AND \"NumEscanos\" > 0)"
-            ));
+            // Removed outdated constraint that forced Nominal Escanos to 0
+            // mb.Entity<Eleccion>().ToTable(t => t.HasCheckConstraint(
+            //    "CK_Eleccion_EscanosSegunTipo",
+            //    "(\"Tipo\" = 0 AND \"NumEscanos\" = 0) OR ((\"Tipo\" = 1 OR \"Tipo\" = 2) AND \"NumEscanos\" > 0)"
+            // ));
 
             // -------------------------
             // Índices

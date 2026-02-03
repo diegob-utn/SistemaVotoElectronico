@@ -129,6 +129,31 @@
                 </div>
             </div>
 
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Acceso" class="form-label">
+                        <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                        Modo de Acceso
+                    </label>
+                    <select asp-for="Acceso" class="form-control" id="selectAcceso" onchange="updateCupoLabel()">
+                        <option value="Generada">Generar Credenciales (Automático)</option>
+                        <option value="Privada">Privada (Asignación Manual de Usuarios)</option>
+                        <option value="Publica">Pública (Cualquier usuario registrado)</option>
+                    </select>
+                    <span asp-validation-for="Acceso" class="text-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="CupoMaximo" class="form-label" id="lblCupo">
+                        <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                        Cantidad de Usuarios
+                    </label>
+                    <input asp-for="CupoMaximo" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="CupoMaximo" class="text-error"></span>
+                    <small class="text-muted" id="helpCupo">0 = Sin límite (sólo para manual/pública).</small>
+                </div>
+            </div>
+
             <div class="form-group form-check">
                 <input asp-for="Activo" class="form-check-input" type="checkbox" />
                 <label asp-for="Activo" class="form-check-label">Activar eleccion al crear</label>
@@ -203,9 +228,30 @@
             }
         }
 
+        function updateCupoLabel() {
+            var select = document.getElementById('selectAcceso');
+            var lbl = document.getElementById('lblCupo');
+            var help = document.getElementById('helpCupo');
+            
+            if (!select || !lbl) return;
+
+            if (select.value === 'Generada') {
+                lbl.innerHTML = '<i data-lucide="users" style="width: 16px; height: 16px;"></i> Cantidad a Generar';
+                help.innerText = 'Número de usuarios ficticios a crear (Requerido > 0).';
+            } else if (select.value === 'Privada') {
+                lbl.innerHTML = '<i data-lucide="users" style="width: 16px; height: 16px;"></i> Cupo Máximo';
+                help.innerText = 'Límite de usuarios asignables (0 = Ilimitado).';
+            } else {
+                lbl.innerHTML = '<i data-lucide="users" style="width: 16px; height: 16px;"></i> Cupo Máximo';
+                help.innerText = 'Límite de votantes totales (0 = Ilimitado).';
+            }
+            lucide.createIcons();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
             toggleModoUbicacion();
+            updateCupoLabel();
         });
     </script>
 }
