@@ -58,7 +58,12 @@
         <!-- Bar Chart -->
         <div class="card">
             <div class="card-header">
-                <h4 class="card-title">Votos por Candidato</h4>
+                @{
+                    var tituloGrafico = (Model.Resultados?.Listas != null && Model.Resultados.Listas.Any()) 
+                                        ? "Votos por Lista" 
+                                        : "Votos por Candidato";
+                }
+                <h4 class="card-title">@tituloGrafico</h4>
             </div>
             <div class="card-body">
                 <div id="chartResultados"></div>
@@ -141,6 +146,52 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if (Model.Resultados?.Listas != null && Model.Resultados.Listas.Any())
+                    {
+                        <tr><td colspan="5" class="text-center"><strong>Resultados por Lista</strong></td></tr>
+                        var posicion = 1;
+                        foreach (var lista in Model.Resultados.Listas)
+                        {
+                            <tr>
+                                <td>@posicion</td>
+                                <td>@lista.Nombre</td>
+                                <td>-</td>
+                                <td><strong>@lista.Votos.ToString("N0")</strong></td>
+                                <td>
+                                    <div class="progress-cell">
+                                        <div class="progress-bar" style="width: @lista.Porcentaje%"></div>
+                                        <span>@lista.Porcentaje.ToString("F1")%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            posicion++;
+                        }
+                         <tr><td colspan="5" class="text-center"><strong>Resultados por Candidato</strong></td></tr>
+                    }
+
+                    @if (Model.Resultados?.Listas != null && Model.Resultados.Listas.Any())
+                    {
+                        <tr><td colspan="5" class="text-center"><strong>Resultados por Lista</strong></td></tr>
+                        var posicion = 1;
+                        foreach (var lista in Model.Resultados.Listas)
+                        {
+                            <tr>
+                                <td>@posicion</td>
+                                <td>@lista.Nombre</td>
+                                <td>-</td>
+                                <td><strong>@lista.Votos.ToString("N0")</strong></td>
+                                <td>
+                                    <div class="progress-cell">
+                                        <div class="progress-bar" style="width: @lista.Porcentaje%"></div>
+                                        <span>@lista.Porcentaje.ToString("F1")%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            posicion++;
+                        }
+                         <tr><td colspan="5" class="text-center"><strong>Resultados por Candidato</strong></td></tr>
+                    }
+
                     @if (Model.Resultados?.Candidatos != null)
                     {
                         var posicion = 1;
@@ -333,121 +384,138 @@
         });
         
         function initCharts() {
-            @if (Model.Resultados?.Candidatos != null && Model.Resultados.Candidatos.Any())
+            @if (Model.Resultados != null)
             {
-                var candidatos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                    Model.Resultados.Candidatos.Select(c => new { 
+                // Determinamos que datos usar (Listas o Candidatos)
+                var usarListas = Model.Resultados.Listas != null && Model.Resultados.Listas.Any();
+                
+                object dataObj;
+                if (usarListas) {
+                     dataObj = Model.Resultados.Listas.Select(l => new { 
+                        nombre = l.Nombre, 
+                        votos = l.Votos, 
+                        porcentaje = l.Porcentaje 
+                    });
+                } else {
+                     dataObj = Model.Resultados.Candidatos.Select(c => new { 
                         nombre = c.Nombre, 
                         votos = c.Votos, 
                         porcentaje = c.Porcentaje 
-                    })));
+                    });
+                }
                 
+                var jsonString = System.Text.Json.JsonSerializer.Serialize(dataObj);
+
                 <text>
-                // Bar Chart
-                var optionsBar = {
-                    series: [{
-                        name: 'Votos',
-                        data: candidatos.map(c => c.votos)
-                    }],
-                    chart: {
-                        type: 'bar',
-                        height: 350,
-                        background: 'transparent',
-                        toolbar: { show: false }
-                    },
-                    plotOptions: {
-                        bar: {
-                            horizontal: true,
-                            borderRadius: 6,
-                            distributed: true,
-                            dataLabels: { position: 'top' }
-                        }
-                    },
-                    colors: [
-                        getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
-                    ],
-                    dataLabels: {
-                        enabled: true,
-                        formatter: function(val, opt) {
-                            return val.toLocaleString();
+                var jsonData = @Html.Raw(jsonString);
+                
+                if (jsonData && jsonData.length > 0) {
+                    // Bar Chart
+                    var optionsBar = {
+                        series: [{
+                            name: 'Votos',
+                            data: jsonData.map(item => item.votos)
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            background: 'transparent',
+                            toolbar: { show: false }
                         },
-                        style: { fontSize: '12px' },
-                        offsetX: 10
-                    },
-                    xaxis: {
-                        categories: candidatos.map(c => c.nombre),
-                        labels: {
-                            style: {
-                                colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                borderRadius: 6,
+                                distributed: true,
+                                dataLabels: { position: 'top' }
                             }
-                        }
-                    },
-                    yaxis: {
-                        labels: {
-                            style: {
-                                colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                        },
+                        colors: [
+                            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
+                        ],
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function(val, opt) {
+                                return val.toLocaleString();
+                            },
+                            style: { fontSize: '12px' },
+                            offsetX: 10
+                        },
+                        xaxis: {
+                            categories: jsonData.map(item => item.nombre),
+                            labels: {
+                                style: {
+                                    colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                                }
                             }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()
+                                }
+                            }
+                        },
+                        grid: {
+                            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                        },
+                        theme: {
+                            mode: document.documentElement.getAttribute('data-theme') || 'light'
                         }
-                    },
-                    grid: {
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
-                    },
-                    theme: {
-                        mode: document.documentElement.getAttribute('data-theme') || 'light'
-                    }
-                };
-                
-                var chartBar = new ApexCharts(document.querySelector("#chartResultados"), optionsBar);
-                chartBar.render();
-                
-                // Pie Chart
-                var optionsPie = {
-                    series: candidatos.map(c => c.votos),
-                    labels: candidatos.map(c => c.nombre),
-                    chart: {
-                        type: 'donut',
-                        height: 350,
-                        background: 'transparent'
-                    },
-                    colors: [
-                        getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
-                        getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
-                    ],
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                size: '60%',
-                                labels: {
-                                    show: true,
-                                    total: {
+                    };
+                    
+                    var chartBar = new ApexCharts(document.querySelector("#chartResultados"), optionsBar);
+                    chartBar.render();
+                    
+                    // Pie Chart
+                    var optionsPie = {
+                        series: jsonData.map(item => item.votos),
+                        labels: jsonData.map(item => item.nombre),
+                        chart: {
+                            type: 'donut',
+                            height: 350,
+                            background: 'transparent'
+                        },
+                        colors: [
+                            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
+                            getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim()
+                        ],
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '60%',
+                                    labels: {
                                         show: true,
-                                        label: 'Total',
-                                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
+                                        total: {
+                                            show: true,
+                                            label: 'Total',
+                                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
+                                        }
                                     }
                                 }
                             }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
+                            }
+                        },
+                        theme: {
+                            mode: document.documentElement.getAttribute('data-theme') || 'light'
                         }
-                    },
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
-                        }
-                    },
-                    theme: {
-                        mode: document.documentElement.getAttribute('data-theme') || 'light'
-                    }
-                };
-                
-                var chartPie = new ApexCharts(document.querySelector("#chartDistribucion"), optionsPie);
-                chartPie.render();
+                    };
+                    
+                    var chartPie = new ApexCharts(document.querySelector("#chartDistribucion"), optionsPie);
+                    chartPie.render();
+                }
                 </text>
             }
         }

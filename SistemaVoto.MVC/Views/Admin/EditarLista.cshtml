@@ -1,0 +1,65 @@
+@using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
+@model ListaViewModel
+
+@{
+    ViewData["Title"] = "Editar Lista";
+    var elecciones = ViewBag.Elecciones as List<Eleccion>;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h2>Editar Lista / Partido</h2>
+                <p class="text-muted">Modifique los datos de la lista.</p>
+            </div>
+            <div class="card-body">
+                @if (Model.ErrorMessage != null)
+                {
+                    <div class="alert alert-error mb-4">
+                        <i data-lucide="alert-circle"></i> @Model.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="EditarLista" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="EleccionId" />
+                    
+                    <div class="form-group mb-3">
+                        <label class="control-label font-bold">Elección</label>
+                        <input type="text" class="form-control" value="@Model.EleccionTitulo" readonly disabled />
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Nombre" class="control-label">Nombre de la Lista / Partido</label>
+                        <input asp-for="Nombre" class="form-control" placeholder="Ej: Movimiento Unidad" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="LogoUrl" class="control-label">URL del Logo (Opcional)</label>
+                        <input asp-for="LogoUrl" class="form-control" placeholder="https://..." />
+                        <span asp-validation-for="LogoUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a asp-action="Listas" asp-route-eleccionId="@Model.EleccionId" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        lucide.createIcons();
+    </script>
+}

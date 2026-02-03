@@ -78,17 +78,39 @@
                     <label class="lista-card">
                         <input type="radio" name="ListaId" value="@lista.Id" required />
                         <div class="lista-content">
-                            <div class="lista-logo">
-                                @if (!string.IsNullOrEmpty(lista.LogoUrl))
-                                {
-                                    <img src="@lista.LogoUrl" alt="@lista.Nombre" />
-                                }
-                                else
-                                {
-                                    <i data-lucide="layers" style="width: 48px; height: 48px;"></i>
-                                }
+                            <div class="lista-header-row">
+                                <div class="lista-logo">
+                                    @if (!string.IsNullOrEmpty(lista.LogoUrl))
+                                    {
+                                        <img src="@lista.LogoUrl" alt="@lista.Nombre" />
+                                    }
+                                    else
+                                    {
+                                        <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+                                    }
+                                </div>
+                                <h3 class="lista-title">@lista.Nombre</h3>
                             </div>
-                            <h3>@lista.Nombre</h3>
+                            
+                            @{
+                                var candidatosLista = Model.Candidatos.Where(c => c.ListaId == lista.Id).ToList();
+                            }
+                            @if (candidatosLista.Any())
+                            {
+                                <div class="lista-candidatos-preview">
+                                    <small class="text-muted d-block mb-1">Candidatos:</small>
+                                    <ul class="lista-ul">
+                                        @foreach (var c in candidatosLista.Take(5))
+                                        {
+                                            <li>@c.Nombre</li>
+                                        }
+                                        @if (candidatosLista.Count > 5)
+                                        {
+                                            <li class="more">... (+@(candidatosLista.Count - 5))</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
                         </div>
                         <div class="lista-check">
                             <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
@@ -132,7 +154,38 @@
                     <label class="lista-card">
                         <input type="radio" name="ListaId" value="@lista.Id" />
                         <div class="lista-content">
-                            <h3>@lista.Nombre</h3>
+                            <div class="lista-header-row">
+                                <div class="lista-logo">
+                                    @if (!string.IsNullOrEmpty(lista.LogoUrl))
+                                    {
+                                        <img src="@lista.LogoUrl" alt="@lista.Nombre" />
+                                    }
+                                    else
+                                    {
+                                        <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+                                    }
+                                </div>
+                                <h3 class="lista-title">@lista.Nombre</h3>
+                            </div>
+                             @{
+                                var candidatosLista = Model.Candidatos.Where(c => c.ListaId == lista.Id).ToList();
+                            }
+                            @if (candidatosLista.Any())
+                            {
+                                <div class="lista-candidatos-preview">
+                                    <small class="text-muted d-block mb-1">Candidatos:</small>
+                                    <ul class="lista-ul">
+                                        @foreach (var c in candidatosLista.Take(5))
+                                        {
+                                            <li>@c.Nombre</li>
+                                        }
+                                        @if (candidatosLista.Count > 5)
+                                        {
+                                            <li class="more">... (+@(candidatosLista.Count - 5))</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
                         </div>
                         <div class="lista-check">
                             <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
@@ -162,8 +215,16 @@
     .candidato-card:has(input:checked) .candidato-check, .lista-card:has(input:checked) .lista-check { display: block; }
     .candidato-foto { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: var(--base-200); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
     .candidato-foto img { width: 100%; height: 100%; object-fit: cover; }
-    .lista-logo { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: var(--base-200); border-radius: 8px; margin-bottom: 1rem; }
+    .lista-logo { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: var(--base-200); border-radius: 8px; flex-shrink: 0; }
     .lista-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .lista-header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .lista-title { margin: 0; font-size: 1.1rem; }
+    .lista-candidatos-preview { font-size: 0.85rem; color: var(--text-secondary); background: var(--bg-body); padding: 0.75rem; border-radius: 6px; }
+    .lista-ul { list-style: none; padding: 0; margin: 0; }
+    .lista-ul li { margin-bottom: 2px; }
+    .lista-ul li::before { content: "•"; color: var(--accent); margin-right: 4px; }
+    .lista-ul li.more { color: var(--text-muted); font-style: italic; list-style: none; }
+    .lista-ul li.more::before { content: ""; margin: 0; }
 </style>
 
 @section Scripts {

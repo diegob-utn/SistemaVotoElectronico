@@ -65,7 +65,10 @@ public class LocalCrudService
 
     public List<Candidato> GetCandidatosByEleccion(int eleccionId)
     {
-        return _context.Candidatos.Where(c => c.EleccionId == eleccionId).ToList();
+        return _context.Candidatos
+            .Include(c => c.Lista)
+            .Where(c => c.EleccionId == eleccionId)
+            .ToList();
     }
 
     public Candidato? GetCandidato(int id)
@@ -104,12 +107,19 @@ public class LocalCrudService
     
     public List<Lista> GetListas()
     {
-        return _context.Listas.Include(l => l.Eleccion).ToList();
+        return _context.Listas
+            .Include(l => l.Eleccion)
+            .Include(l => l.Candidatos)
+            .ToList();
     }
 
     public List<Lista> GetListasByEleccion(int eleccionId)
     {
-        return _context.Listas.Where(l => l.EleccionId == eleccionId).ToList();
+        return _context.Listas
+            .Include(l => l.Eleccion)
+            .Include(l => l.Candidatos)
+            .Where(l => l.EleccionId == eleccionId)
+            .ToList();
     }
 
     public Lista? GetLista(int id)
@@ -306,5 +316,13 @@ public class LocalCrudService
         };
         _context.HistorialVotos.Add(historial);
         _context.SaveChanges();
+    }
+
+    public HashSet<int> GetVotedElectionIds(string usuarioId)
+    {
+        return _context.HistorialVotos
+            .Where(h => h.UsuarioId == usuarioId)
+            .Select(h => h.EleccionId)
+            .ToHashSet();
     }
 }

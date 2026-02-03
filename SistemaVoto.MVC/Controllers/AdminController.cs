@@ -37,12 +37,35 @@ public class AdminController : Controller
     {
         var elecciones = _crud.GetElecciones();
         
+        var votos = _crud.GetVotos();
+        
+        // Calcular participacion por mes de este año
+        var currentYear = DateTime.UtcNow.Year;
+        var votosPorMes = votos
+            .Where(v => v.FechaVotoUtc.Year == currentYear)
+            .GroupBy(v => v.FechaVotoUtc.Month)
+            .Select(g => new { Month = g.Key, Count = g.Count() })
+            .ToDictionary(k => k.Month, v => v.Count);
+            
+        var labels = new List<string>();
+        var data = new List<int>();
+        var meses = new[] { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" };
+        
+        for (int i = 1; i <= DateTime.UtcNow.Month; i++)
+        {
+            labels.Add(meses[i-1]);
+            data.Add(votosPorMes.ContainsKey(i) ? votosPorMes[i] : 0);
+        }
+
         var stats = new DashboardViewModel
         {
             TotalElecciones = elecciones.Count,
             EleccionesActivas = elecciones.Count(e => e.Estado == EstadoEleccion.Activa),
             TotalUsuarios = _userManager.Users.Count(),
-            Elecciones = elecciones
+            TotalVotos = votos.Count,
+            Elecciones = elecciones,
+            ParticipacionData = data,
+            ParticipacionLabels = labels
         };
 
         return View(stats);
@@ -981,20 +1004,28 @@ public class AdminController : Controller
 
     #region Candidatos
 
-    public IActionResult Candidatos(int eleccionId = 0)
+    public IActionResult Candidatos(int eleccionId = 0, int? listaId = null)
     {
-        var candidatos = eleccionId > 0 
+        var candidatos = (eleccionId > 0) 
             ? _crud.GetCandidatosByEleccion(eleccionId) 
             : _crud.GetCandidatos();
             
+        if (listaId.HasValue)
+        {
+            candidatos = candidatos.Where(c => c.ListaId == listaId.Value).ToList();
+        }
+
         var eleccion = eleccionId > 0 ? _crud.GetEleccion(eleccionId) : null;
+        var lista = listaId.HasValue ? _crud.GetLista(listaId.Value) : null;
 
         // Cargar nombres de listas si aplica
         ViewBag.Listas = _crud.GetListas();
 
         ViewBag.EleccionId = eleccionId;
         ViewBag.Eleccion = eleccion;
-        ViewBag.EleccionTitulo = eleccion?.Titulo ?? "Todas las Elecciones";
+        ViewBag.EleccionTitulo = eleccion?.Titulo ?? (lista?.Nombre != null ? $"Lista: {lista.Nombre}" : "Todas las Elecciones");
+        
+        if (lista != null) ViewBag.ListaFiltro = lista;
 
         return View(candidatos);
     }
@@ -1029,6 +1060,21 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult CrearCandidato(CandidatoViewModel model)
     {
+        // Validacion personalizada: Requerir Lista O Partido
+        if (model.ListaId.HasValue && model.ListaId.Value > 0)
+        {
+            // Si selecciono lista, obtener el nombre del partido de la lista
+            var lista = _crud.GetLista(model.ListaId.Value);
+            if (lista != null)
+            {
+                model.PartidoPolitico = lista.Nombre; // Asignar nombre de lista como partido
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(model.PartidoPolitico))
+        {
+            ModelState.AddModelError("PartidoPolitico", "El partido político o selección de lista es obligatorio.");
+        }
+
         if (!ModelState.IsValid)
         {
             // Recargar elecciones y listas en caso de error
@@ -1040,11 +1086,11 @@ public class AdminController : Controller
         var candidato = new Candidato
         {
             Nombre = model.Nombre,
-            PartidoPolitico = model.PartidoPolitico,
+            PartidoPolitico = model.PartidoPolitico ?? "Independiente", // Fallback seguro
             FotoUrl = model.FotoUrl,
             Propuestas = model.Propuestas,
             EleccionId = model.EleccionId,
-            ListaId = model.RequiereLista ? model.ListaId : null
+            ListaId = (model.ListaId.HasValue && model.ListaId.Value > 0) ? model.ListaId : null
         };
 
         try
@@ -1142,4 +1188,8 @@ public class DashboardViewModel
     public int TotalUsuarios { get; set; }
     public int TotalVotos { get; set; }
     public List<SistemaVoto.Modelos.Eleccion> Elecciones { get; set; } = new();
+    
+    // Datos para graficos
+    public List<int> ParticipacionData { get; set; } = new();
+    public List<string> ParticipacionLabels { get; set; } = new();
 }

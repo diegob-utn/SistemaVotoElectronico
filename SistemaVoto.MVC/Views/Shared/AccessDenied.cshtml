@@ -1,0 +1,36 @@
+@{
+    ViewData["Title"] = "Acceso Denegado";
+}
+
+<div class="container" style="margin-top: 100px; text-align: center;">
+    <div class="card shadow-lg p-5" style="max-width: 600px; margin: 0 auto; border-radius: 15px; border-left: 5px solid #dc3545;">
+        <div class="card-body">
+            <div style="margin-bottom: 2rem;">
+                <i data-lucide="shield-alert" style="width: 80px; height: 80px; color: #dc3545;"></i>
+            </div>
+            
+            <h1 class="text-danger mb-4">Acceso Denegado</h1>
+            
+            <p class="lead mb-4">
+                Lo sentimos, no tienes los permisos necesarios para acceder a esta página.
+            </p>
+            
+            <p class="text-muted mb-5">
+                Si crees que esto es un error, por favor contacta al administrador del sistema.
+            </p>
+            
+            <div class="d-grid gap-2 col-8 mx-auto">
+                <a href="/" class="btn btn-primary btn-lg">
+                    <i data-lucide="home" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"></i>
+                    Regresar al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+    });
+</script>

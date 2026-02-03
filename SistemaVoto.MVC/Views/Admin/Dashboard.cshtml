@@ -266,7 +266,7 @@
             var optionsArea = {
                 series: [{
                     name: 'Votos',
-                    data: [30, 40, 35, 50, 49, 60, 70, 91, 125]
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParticipacionData))
                 }],
                 chart: {
                     type: 'area',
@@ -288,7 +288,7 @@
                     }
                 },
                 xaxis: {
-                    categories: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep'],
+                    categories: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParticipacionLabels)),
                     labels: {
                         style: {
                             colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim()

@@ -76,9 +76,9 @@
                                 <td class="font-medium">@lista.Nombre</td>
                                 <td>@(lista.Eleccion?.Titulo ?? $"#{lista.EleccionId}")</td>
                                 <td>
-                                    <span class="badge badge-outline">
+                                    <a href="@Url.Action("Candidatos", new { eleccionId = lista.EleccionId, listaId = lista.Id })" class="badge badge-outline hover:bg-accent hover:text-white transition-colors">
                                         @lista.Candidatos?.Count() Candidatos
-                                    </span>
+                                    </a>
                                 </td>
                                 <td>
                                     <div style="display: flex; gap: 0.25rem;">

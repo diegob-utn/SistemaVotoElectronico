@@ -84,6 +84,7 @@ namespace SistemaVoto.MVC.ViewModels
         public int NumEscanos { get; set; }
         public int TotalVotos { get; set; }
         public List<CandidatoResultadoDto> Candidatos { get; set; } = new();
+        public List<ListaResultadoDto> Listas { get; set; } = new();
     }
 
     public class CandidatoResultadoDto
@@ -91,6 +92,14 @@ namespace SistemaVoto.MVC.ViewModels
         public int Id { get; set; }
         public string Nombre { get; set; } = string.Empty;
         public string? PartidoPolitico { get; set; }
+        public int Votos { get; set; }
+        public double Porcentaje { get; set; }
+    }
+
+    public class ListaResultadoDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
         public int Votos { get; set; }
         public double Porcentaje { get; set; }
     }

@@ -44,6 +44,15 @@ public class EleccionesController : Controller
             Finalizadas = elecciones.Where(e => e.Estado == EstadoEleccion.Cerrada).Select(MapToDto).ToList()
         };
         
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                ViewBag.VotedElectionIds = _crud.GetVotedElectionIds(userId);
+            }
+        }
+
         return View(model);
     }
 
@@ -58,6 +67,15 @@ public class EleccionesController : Controller
         {
             TempData["Error"] = "Elección no encontrada";
             return RedirectToAction("Index");
+        }
+
+        // Verificar si ya ha votado para mostrar mensaje o bloquear boton
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var yaVoto = !string.IsNullOrEmpty(userId) && _crud.HasVoted(id, userId);
+        if (yaVoto)
+        {
+            // Opcional: Redirigir directamente a confirmacion/resultados
+            // return RedirectToAction("Confirmacion", new { id = id });
         }
 
         var candidatos = _crud.GetCandidatosByEleccion(id);
@@ -95,6 +113,7 @@ public class EleccionesController : Controller
     /// Proceso de votación
     /// </summary>
     [HttpGet]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Votar(int id)
     {
         if (!User.Identity?.IsAuthenticated ?? true)
@@ -108,6 +127,14 @@ public class EleccionesController : Controller
         {
             TempData["Error"] = "Esta elección no está disponible para votar";
             return RedirectToAction("Index");
+        }
+
+        // Verificar si ya ha votado
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId) && _crud.HasVoted(id, userId))
+        {
+             TempData["Error"] = "Usted ya ha votado en esta elección.";
+             return RedirectToAction("Confirmacion", new { id = id });
         }
 
         var candidatos = _crud.GetCandidatosByEleccion(id);
@@ -167,7 +194,7 @@ public class EleccionesController : Controller
 
         // Verificar si ya ha votado (usando Identity User Id)
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        
+
         // Validar si el usuario corresponde a esta elección (si es votante generado)
         var userName = User.Identity?.Name;
         if (userName != null && userName.StartsWith("votante_"))
@@ -182,9 +209,11 @@ public class EleccionesController : Controller
                 }
             }
         }
-
+        
+        // Verificación reforzada de doble voto
         if (!string.IsNullOrEmpty(userId))
         {
+            // Check 1: Using ID
             if (_crud.HasVoted(model.EleccionId, userId))
             {
                 TempData["Error"] = "Usted ya ha emitido su voto en esta elección.";

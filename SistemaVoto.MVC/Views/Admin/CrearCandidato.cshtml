@@ -74,29 +74,48 @@
                             <span asp-validation-for="Nombre" class="text-danger"></span>
                         </div>
                         
-                        @if (Model.RequiereLista && listas != null && listas.Any())
+                        @if (listas != null && listas.Any())
                         {
                             <div class="col-md-6 mb-3">
-                                <label asp-for="ListaId" class="form-label font-bold">Partido / Lista (Requerido)</label>
-                                <select asp-for="ListaId" class="form-select">
-                                    <option value="">-- Seleccione un Partido/Lista --</option>
+                                <label asp-for="ListaId" class="form-label font-bold">Partido / Lista (Opcional)</label>
+                                <select asp-for="ListaId" class="form-select" id="listaSelect">
+                                    <option value="">-- Independiente / Otro --</option>
                                     @foreach (var lista in listas)
                                     {
                                         <option value="@lista.Id">@lista.Nombre</option>
                                     }
                                 </select>
                                 <span asp-validation-for="ListaId" class="text-danger"></span>
-                                <small class="text-muted">El partido se asignará según la lista seleccionada.</small>
+                                <small class="text-muted">Si selecciona lista, el partido se asignará automáticamente.</small>
                             </div>
                         }
-                        else
-                        {
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="PartidoPolitico" class="form-label">Partido / Movimiento</label>
-                                <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido" />
-                                <span asp-validation-for="PartidoPolitico" class="text-danger"></span>
-                            </div>
-                        }
+
+                        <div class="col-md-6 mb-3" id="partidoInputContainer">
+                            <label asp-for="PartidoPolitico" class="form-label">Partido / Movimiento</label>
+                            <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido (si es independiente)" id="partidoInput" />
+                            <span asp-validation-for="PartidoPolitico" class="text-danger"></span>
+                        </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var select = document.getElementById('listaSelect');
+                                var inputContainer = document.getElementById('partidoInputContainer');
+                                var input = document.getElementById('partidoInput');
+
+                                if (select) {
+                                    function toggleInput() {
+                                        if (select.value) {
+                                            inputContainer.style.display = 'none';
+                                            input.value = ''; // Limpiar si selecciona lista
+                                        } else {
+                                            inputContainer.style.display = 'block';
+                                        }
+                                    }
+                                    select.addEventListener('change', toggleInput);
+                                    toggleInput(); // Run on init
+                                }
+                            });
+                        </script>
                     </div>
 
                     <div class="mb-3">

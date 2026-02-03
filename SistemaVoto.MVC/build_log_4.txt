@@ -1,16 +1,24 @@
   Determinando los proyectos que se van a restaurar...
-  Todos los proyectos est├ín actualizados para la restauraci├│n.
+  Todos los proyectos están actualizados para la restauración.
   SistemaVoto.Modelos -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.Modelos\bin\Debug\net8.0\SistemaVoto.Modelos.dll
   SistemaVoto.ApiConsumer -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.ApiConsumer\bin\Debug\net8.0\SistemaVoto.ApiConsumer.dll
   SistemaVoto.Data -> C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.Data\bin\Debug\net8.0\SistemaVoto.Data.dll
-C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(164,34): warning CS8601: Posible asignaci├│n de referencia nula. [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
-C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\EditarUbicacion.cshtml(40,102): error CS0246: El nombre del tipo o del espacio de nombres 'TipoUbicacion' no se encontr├│ (┬┐falta una directiva using o una referencia de ensamblado?) [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(42,26): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(50,21): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(51,51): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(59,21): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(60,51): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Elecciones\Detalle.cshtml(63,56): warning CS8602: Desreferencia de una referencia posiblemente NULL. [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
 
 ERROR al compilar.
 
-C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\AdminController.cs(164,34): warning CS8601: Posible asignaci├│n de referencia nula. [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
-C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Admin\EditarUbicacion.cshtml(40,102): error CS0246: El nombre del tipo o del espacio de nombres 'TipoUbicacion' no se encontr├│ (┬┐falta una directiva using o una referencia de ensamblado?) [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Views\Elecciones\Detalle.cshtml(63,56): warning CS8602: Desreferencia de una referencia posiblemente NULL. [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(42,26): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(50,21): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(51,51): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(59,21): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
+C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\Controllers\ResultadosController.cs(60,51): error CS0103: El nombre 'votos' no existe en el contexto actual [C:\Users\Dreigon\Documents\proyecto-herramientas\SistemaVoto\SistemaVoto.MVC\SistemaVoto.MVC.csproj]
     1 Advertencia(s)
-    1 Errores
+    5 Errores
 
-Tiempo transcurrido 00:00:04.88
+Tiempo transcurrido 00:00:03.23

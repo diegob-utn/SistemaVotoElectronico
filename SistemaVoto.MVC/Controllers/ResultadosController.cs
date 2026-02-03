@@ -22,6 +22,12 @@ public class ResultadosController : Controller
     /// <summary>
     /// Muestra los resultados de una eleccion
     /// </summary>
+    /// <summary>
+    /// Muestra los resultados de una eleccion
+    /// </summary>
+    [HttpGet]
+    [Route("Resultados/{id}")]
+    [Route("Resultados/Index/{id}")]
     public IActionResult Index(int id)
     {
         var eleccion = _crud.GetEleccion(id);
@@ -38,8 +44,13 @@ public class ResultadosController : Controller
         // Obtener votos
         var votos = _crud.GetVotosByEleccion(id);
         
+        // Obtener listas
+        var listas = _crud.GetListasByEleccion(id);
+
         // Construir resultados
         var totalVotos = votos.Count;
+        
+        // Resultados Candidatos
         var candidatosConVotos = candidatos.Select(c => new CandidatoResultadoDto
         {
             Id = c.Id,
@@ -48,6 +59,20 @@ public class ResultadosController : Controller
             Votos = votos.Count(v => v.CandidatoId == c.Id),
             Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.CandidatoId == c.Id) / totalVotos * 100 : 0
         }).OrderByDescending(c => c.Votos).ToList();
+
+        // Resultados Listas (Para Plancha/Mixta)
+        var listasConVotos = listas.Select(l => new ListaResultadoDto
+        {
+            Id = l.Id,
+            Nombre = l.Nombre,
+            Votos = votos.Count(v => v.ListaId == l.Id),
+            Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.ListaId == l.Id) / totalVotos * 100 : 0
+        }).OrderByDescending(l => l.Votos).ToList();
+
+        // Si es Plancha, y no hay votos directos a candidatos, pero si a listas,
+        // atribuimos visualmente los votos de la lista a sus candidatos para que no se vea vacío 
+        // OJO: Esto es solo para visualización si se desea, por ahora mantenemos separado.
+        // Pero si la elección es Plancha, el grafico principal debería ser de Listas.
 
         var eleccionDto = new EleccionDto
         {
@@ -73,24 +98,39 @@ public class ResultadosController : Controller
                 Tipo = eleccion.Tipo.ToString(),
                 NumEscanos = eleccion.NumEscanos,
                 TotalVotos = totalVotos,
-                Candidatos = candidatosConVotos
+                Candidatos = candidatosConVotos,
+                Listas = listasConVotos
             }
         };
 
         // Si hay escanos y resultados, calcular distribucion
-        if (eleccion.NumEscanos > 0 && candidatosConVotos.Any())
+        if (eleccion.NumEscanos > 0)
         {
-            var votosPorCandidato = candidatosConVotos
-                .Select(c => (c.Nombre, c.Votos))
-                .ToList();
-            
-            model.DistribucionDHondt = _calculoEscanos.CalcularDHondt(
-                votosPorCandidato, 
-                eleccion.NumEscanos);
-            
-            model.DistribucionWebster = _calculoEscanos.CalcularWebster(
-                votosPorCandidato, 
-                eleccion.NumEscanos);
+            List<(string Nombre, int Votos)> dataParaEscanos = new();
+
+            // Determinar si usamos Votos de Listas o Candidatos
+            // Plancha: Se usan listas
+            // Nominal: Se usan candidatos
+            // Mixta: Generalmente se asignan escanos por Lista primero (sistema proporcional)
+            if ((eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta) && listasConVotos.Any())
+            {
+                dataParaEscanos = listasConVotos.Select(l => (l.Nombre, l.Votos)).ToList();
+            }
+            else if (candidatosConVotos.Any())
+            {
+                dataParaEscanos = candidatosConVotos.Select(c => (c.Nombre, c.Votos)).ToList();
+            }
+
+            if (dataParaEscanos.Any(x => x.Votos > 0)) // Solo calcular si hay votos
+            {
+                model.DistribucionDHondt = _calculoEscanos.CalcularDHondt(
+                    dataParaEscanos, 
+                    eleccion.NumEscanos);
+                
+                model.DistribucionWebster = _calculoEscanos.CalcularWebster(
+                    dataParaEscanos, 
+                    eleccion.NumEscanos);
+            }
         }
 
         return View(model);
@@ -114,6 +154,22 @@ public class ResultadosController : Controller
         var csv = new System.Text.StringBuilder();
         csv.AppendLine("Candidato,Partido,Votos,Porcentaje");
         
+        // Resultados Listas (si existen)
+        var listas = _crud.GetListasByEleccion(id);
+        if (listas.Any())
+        {
+            csv.AppendLine("--- RESULTADOS POR LISTA ---");
+            csv.AppendLine("Lista,Detalle,Votos,Porcentaje");
+            foreach (var lista in listas.OrderByDescending(l => votos.Count(v => v.ListaId == l.Id)))
+            {
+                var votosL = votos.Count(v => v.ListaId == lista.Id);
+                var porcentaje = totalVotos > 0 ? (double)votosL / totalVotos * 100 : 0;
+                csv.AppendLine($"\"{lista.Nombre}\",\"Lista Completa\",{votosL},{porcentaje:F2}%");
+            }
+            csv.AppendLine("");
+            csv.AppendLine("--- RESULTADOS POR CANDIDATO ---");
+        }
+
         foreach (var candidato in candidatos.OrderByDescending(c => votos.Count(v => v.CandidatoId == c.Id)))
         {
             var votosC = votos.Count(v => v.CandidatoId == candidato.Id);
@@ -150,11 +206,22 @@ public class ResultadosController : Controller
             Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.CandidatoId == c.Id) / totalVotos * 100 : 0
         }).OrderByDescending(c => c.Votos).ToList();
 
+        // Resultados Listas (opcional)
+        var listas = _crud.GetListasByEleccion(id);
+        var listasConVotos = listas.Select(l => new
+        {
+            Nombre = l.Nombre,
+            Votos = votos.Count(v => v.ListaId == l.Id),
+            Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.ListaId == l.Id) / totalVotos * 100 : 0
+        }).OrderByDescending(l => l.Votos).ToList();
+
         return Json(new { 
             success = true, 
             data = new {
                 TotalVotos = totalVotos,
-                Candidatos = candidatosConVotos
+                Candidatos = candidatosConVotos,
+                Listas = listasConVotos,
+                Tipo = eleccion.Tipo.ToString()
             }
         });
     }

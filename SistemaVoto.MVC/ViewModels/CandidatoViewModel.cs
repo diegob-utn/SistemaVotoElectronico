@@ -10,8 +10,8 @@ namespace SistemaVoto.MVC.ViewModels
         [StringLength(120)]
         public string Nombre { get; set; } = null!;
 
-        [Required(ErrorMessage = "El partido político o movimiento es obligatorio")]
-        public string PartidoPolitico { get; set; } = null!;
+        // [Required] -> Eliminado para manejar logica personalizada (Lista vs Manual)
+        public string? PartidoPolitico { get; set; }
 
         public string? FotoUrl { get; set; }
         

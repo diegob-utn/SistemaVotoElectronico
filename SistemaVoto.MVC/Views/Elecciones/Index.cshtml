@@ -41,10 +41,25 @@
                             </div>
                         </div>
                         <div class="eleccion-actions">
-                            <a href="/Elecciones/Votar/@eleccion.Id" class="btn btn-primary">
-                                <i data-lucide="check-square" style="width: 18px; height: 18px;"></i>
-                                Votar
-                            </a>
+                            @{
+                                var votedIds = ViewBag.VotedElectionIds as HashSet<int>;
+                                var hasVoted = votedIds != null && votedIds.Contains(eleccion.Id);
+                            }
+                            
+                            @if (hasVoted)
+                            {
+                                <button class="btn btn-disabled" disabled style="background-color: var(--color-success); opacity: 0.7; color: white;">
+                                    <i data-lucide="check" style="width: 18px; height: 18px;"></i>
+                                    Voto Registrado
+                                </button>
+                            }
+                            else
+                            {
+                                <a href="/Elecciones/Votar/@eleccion.Id" class="btn btn-primary">
+                                    <i data-lucide="check-square" style="width: 18px; height: 18px;"></i>
+                                    Votar
+                                </a>
+                            }
                             <a href="/Elecciones/Detalle/@eleccion.Id" class="btn btn-secondary">Ver Detalles</a>
                         </div>
                     </div>
