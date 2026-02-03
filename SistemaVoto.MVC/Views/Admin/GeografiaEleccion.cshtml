@@ -1,0 +1,99 @@
+@using SistemaVoto.Modelos
+@model List<Ubicacion>
+@{
+    ViewData["Title"] = "Geografía de Elección";
+    var eleccion = ViewBag.Eleccion as Eleccion;
+    var seleccionadas = ViewBag.AsociacionesIds as HashSet<int> ?? new HashSet<int>();
+}
+
+<div class="page-container" style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+             <h1 style="display: flex; align-items: center; gap: 0.75rem; margin: 0;">
+                <i data-lucide="map" style="width: 32px; height: 32px;"></i>
+                Geografía de Elección
+            </h1>
+            <a href="@Url.Action("EditarEleccion", new { id = eleccion?.Id })" class="btn btn-ghost">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Volver
+            </a>
+        </div>
+        <p class="text-muted">Seleccione las ubicaciones geográficas habilitadas para: <strong>@eleccion?.Titulo</strong></p>
+        <div class="alert alert-info mt-4">
+            Modo configurado: <strong>@eleccion?.ModoUbicacion</strong>.
+            @if(eleccion?.ModoUbicacion == ModoUbicacion.PorUbicacion)
+            {
+               <span>Los votantes deben tener registrada su residencia en estas ubicaciones.</span>
+            }
+            else
+            {
+               <span>Los recintos dentro de estas ubicaciones estarán habilitados.</span>
+            }
+        </div>
+    </div>
+
+    <form asp-action="ActualizarGeografia" method="post">
+        <input type="hidden" name="eleccionId" value="@eleccion?.Id" />
+        @Html.AntiForgeryToken()
+
+        <div class="card p-4">
+            <h3 class="mb-4">Ubicaciones Disponibles</h3>
+            
+            <div class="locations-grid">
+                @if (Model.Any())
+                {
+                    // Agrupar por tipo para mejor visualización
+                    var porTipo = Model.GroupBy(u => u.Tipo);
+                    
+                    @foreach (var grupo in porTipo)
+                    {
+                        <div class="location-group mb-4">
+                            <h4 class="text-uppercase text-muted text-sm border-bottom pb-2 mb-3">@grupo.Key</h4>
+                            <div class="options-list">
+                                @foreach (var u in grupo)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input type="checkbox" name="ubicacionesSeleccionadas" value="@u.Id" id="loc_@u.Id" 
+                                               class="form-check-input" @(seleccionadas.Contains(u.Id) ? "checked" : "") />
+                                        <label for="loc_@u.Id" class="form-check-label">
+                                            @u.Nombre
+                                            @if(u.Parent != null) {
+                                                <span class="text-muted text-xs"> (dentro de @u.Parent.Nombre)</span>
+                                            }
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4">No hay ubicaciones registradas en el sistema. <a href="@Url.Action("CrearUbicacion")">Crear Ubicaciones</a></p>
+                }
+            </div>
+            
+            <div class="actions mt-4 pt-4 border-top text-center">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="save" style="width: 20px; height: 20px;"></i>
+                    Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .options-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

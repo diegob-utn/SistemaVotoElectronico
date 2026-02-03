@@ -1,0 +1,89 @@
+@using SistemaVoto.Modelos
+@model List<Ubicacion>
+@{
+    ViewData["Title"] = "Gestión de Ubicaciones";
+}
+
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="display: flex; align-items: center; gap: 0.75rem; margin: 0;">
+                <i data-lucide="map" style="width: 32px; height: 32px;"></i>
+                Gestión de Ubicaciones
+            </h1>
+            <p class="text-muted">Provincias, Ciudades, Campus, etc.</p>
+        </div>
+        <a href="@Url.Action("CrearUbicacion")" class="btn btn-primary">
+            <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+            Nueva Ubicación
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error">
+            <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <div class="card">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Padre (Ubicación Superior)</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="font-medium">@item.Nombre</td>
+                                <td><span class="badge badge-outline">@item.Tipo</span></td>
+                                <td>@(item.Parent?.Nombre ?? "-")</td>
+                                <td>
+                                    <form asp-action="EliminarUbicacion" method="post" style="display:inline;"
+                                          onsubmit="return confirm('¿Seguro que desea eliminar esta ubicación? Si tiene hijos, fallará.')">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-ghost btn-sm text-error">
+                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-8 text-muted">
+                                No hay ubicaciones registradas
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}

@@ -1,3 +1,4 @@
+@using SistemaVoto.Modelos
 @model EleccionViewModel
 @{
     ViewData["Title"] = "Editar Eleccion";
@@ -87,6 +88,44 @@
                 </div>
             </div>
 
+            <div class="form-row">
+                <div class="form-group form-check" style="align-self: center;">
+                    <input asp-for="UsaUbicacion" class="form-check-input" type="checkbox" id="checkUsaUbicacion" onchange="toggleModoUbicacion()" />
+                    <label asp-for="UsaUbicacion" class="form-check-label">Restringir por Ubicación Geográfica</label>
+                </div>
+
+                <div class="form-group" id="divModoUbicacion" style="display:none;">
+                    <label asp-for="ModoUbicacion" class="form-label">
+                        <i data-lucide="map" style="width: 16px; height: 16px;"></i>
+                        Modo de Restricción
+                    </label>
+                    <select asp-for="ModoUbicacion" asp-items="Html.GetEnumSelectList<ModoUbicacion>()" class="form-control"></select>
+                    
+                    <div id="divCheckboxUbicaciones" style="margin-top: 1rem; max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 1rem; border-radius: 0.5rem; background: rgba(255,255,255,0.05);">
+                        <label class="form-label" style="display:block; margin-bottom: 0.5rem; font-weight: 500;">Ubicaciones Permitidas</label>
+                        @if(ViewBag.Ubicaciones != null)
+                        {
+                            var ubis = (List<Ubicacion>)ViewBag.Ubicaciones;
+                            if(ubis.Any())
+                            {
+                                foreach(var u in ubis)
+                                {
+                                    <div class="form-check" style="margin-bottom: 0.25rem;">
+                                          <input type="checkbox" name="UbicacionesSeleccionadas" value="@u.Id" id="cb_@u.Id" class="form-check-input"
+                                                 @((Model.UbicacionesSeleccionadas != null && Model.UbicacionesSeleccionadas.Contains(u.Id)) ? "checked" : "") />
+                                          <label for="cb_@u.Id" class="form-check-label" style="cursor:pointer;">@u.Nombre <small class="text-muted">(@u.Tipo)</small></label>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted text-sm">No hay ubicaciones registradas.</div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group form-check">
                 <input asp-for="Activo" class="form-check-input" type="checkbox" />
                 <label asp-for="Activo" class="form-check-label">Eleccion activa</label>
@@ -97,10 +136,11 @@
                     <i data-lucide="save" style="width: 20px; height: 20px;"></i>
                     Guardar Cambios
                 </button>
-                <a href="/Admin/Candidatos?eleccionId=@Model.Id" class="btn btn-secondary btn-lg">
-                    <i data-lucide="users" style="width: 20px; height: 20px;"></i>
-                    Gestionar Candidatos
                 </a>
+                @if (Model.UsaUbicacion)
+                {
+                   <!-- Gestion integrada arriba -->
+                }
             </div>
         </form>
     </div>
@@ -160,8 +200,17 @@
 
 @section Scripts {
     <script>
+        function toggleModoUbicacion() {
+            var check = document.getElementById('checkUsaUbicacion');
+            var div = document.getElementById('divModoUbicacion');
+            if (check && div) {
+                div.style.display = check.checked ? 'block' : 'none';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
+            toggleModoUbicacion();
         });
     </script>
 }

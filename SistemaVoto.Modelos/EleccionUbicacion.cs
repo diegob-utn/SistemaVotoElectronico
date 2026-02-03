@@ -10,6 +10,7 @@ namespace SistemaVoto.Modelos
     // Elección puede aplicar a muchas ubicaciones (y viceversa)
     public class EleccionUbicacion
     {
+        public int Id { get; set; }
         public int EleccionId { get; set; }
         [JsonIgnore] public Eleccion Eleccion { get; set; } = null!;
 

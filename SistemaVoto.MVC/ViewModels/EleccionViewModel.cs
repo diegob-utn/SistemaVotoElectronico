@@ -1,3 +1,4 @@
+using SistemaVoto.Modelos;
 using System.ComponentModel.DataAnnotations;
 
 namespace SistemaVoto.MVC.ViewModels;
@@ -38,6 +39,15 @@ public class EleccionViewModel
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
+    
+    [Display(Name = "Usar Restricción Geográfica")]
+    public bool UsaUbicacion { get; set; }
+
+    [Display(Name = "Modo de Ubicación")]
+    public ModoUbicacion ModoUbicacion { get; set; }
+
+    [Display(Name = "Ubicaciones Habilitadas")]
+    public List<int> UbicacionesSeleccionadas { get; set; } = new List<int>();
 
     public string? ErrorMessage { get; set; }
     public string? SuccessMessage { get; set; }
@@ -67,6 +77,31 @@ public class CandidatoViewModel
     public int EleccionId { get; set; }
 
     public string? EleccionTitulo { get; set; }
+    
+    [Display(Name = "Lista (para Plancha/Mixta)")]
+    public int? ListaId { get; set; }
+    
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// ViewModel para crear/editar listas
+/// </summary>
+public class ListaViewModel
+{
+    public int Id { get; set; }
+
+    [Required(ErrorMessage = "El nombre es requerido")]
+    [StringLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres")]
+    [Display(Name = "Nombre de la Lista/Partido")]
+    public string Nombre { get; set; } = null!;
+
+    [Display(Name = "Logo URL")]
+    public string? LogoUrl { get; set; }
+
+    [Required]
+    public int EleccionId { get; set; }
+    
     public string? ErrorMessage { get; set; }
 }
 

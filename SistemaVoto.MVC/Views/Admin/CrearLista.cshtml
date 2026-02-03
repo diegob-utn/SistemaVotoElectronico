@@ -1,0 +1,63 @@
+@using SistemaVoto.MVC.ViewModels
+@model ListaViewModel
+@{
+    ViewData["Title"] = "Crear Lista";
+}
+
+<div class="auth-container" style="max-width: 600px; margin: 2rem auto;">
+    <div class="auth-card">
+        <div class="auth-header">
+            <a href="@Url.Action("Listas", new { eleccionId = Model.EleccionId })" class="auth-back-link">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Volver
+            </a>
+            <h1 class="auth-title">
+                <i data-lucide="layers" style="width: 24px; height: 24px;"></i>
+                Nueva Lista
+            </h1>
+            <p class="auth-subtitle">Registre una nueva lista o partido político para la elección</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+                <span>@Model.ErrorMessage</span>
+            </div>
+        }
+
+        <form asp-action="CrearLista" method="post" class="auth-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="EleccionId" />
+
+            <div class="form-group">
+                <label asp-for="Nombre" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-icon">
+                        <i data-lucide="type" style="width: 20px; height: 20px;"></i>
+                    </span>
+                    <input asp-for="Nombre" class="form-input" placeholder="Ej. Partido Progreso" />
+                </div>
+                <span asp-validation-for="Nombre" class="text-error text-sm"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LogoUrl" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-icon">
+                        <i data-lucide="image" style="width: 20px; height: 20px;"></i>
+                    </span>
+                    <input asp-for="LogoUrl" class="form-input" placeholder="https://ejemplo.com/logo.png" />
+                </div>
+                <span asp-validation-for="LogoUrl" class="text-error text-sm"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                <i data-lucide="save" style="width: 20px; height: 20px;"></i> Crear Lista
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

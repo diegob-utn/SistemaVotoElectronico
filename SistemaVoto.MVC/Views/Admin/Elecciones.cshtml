@@ -103,6 +103,12 @@
                                         <a href="/Admin/Candidatos?eleccionId=@eleccion.Id" class="btn btn-ghost btn-sm" title="Candidatos">
                                             <i data-lucide="users" style="width: 16px; height: 16px;"></i>
                                         </a>
+                                        @if (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta)
+                                        {
+                                            <a href="/Admin/Listas?eleccionId=@eleccion.Id" class="btn btn-ghost btn-sm" title="Listas">
+                                                <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+                                            </a>
+                                        }
                                         <a href="/Resultados/@eleccion.Id" class="btn btn-ghost btn-sm" title="Resultados">
                                             <i data-lucide="bar-chart" style="width: 16px; height: 16px;"></i>
                                         </a>

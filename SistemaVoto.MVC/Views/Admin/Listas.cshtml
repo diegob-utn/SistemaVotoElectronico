@@ -1,0 +1,102 @@
+@using SistemaVoto.Modelos
+@model List<Lista>
+
+@{
+    ViewData["Title"] = "Gestión de Listas/Partidos";
+    var eleccion = ViewBag.Eleccion as Eleccion;
+    var eleccionId = ViewBag.EleccionId as int?;
+}
+
+<div class="listas-container">
+    <div class="page-header">
+        <div>
+            <h1>
+                <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+                Listas / Partidos
+            </h1>
+            <p class="text-muted">Gestione las listas y partidos para las elecciones tipo Plancha/Mixta</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Elecciones")" class="btn btn-ghost">
+                <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i> Volver
+            </a>
+            @if (eleccionId.HasValue)
+            {
+                <a href="@Url.Action("CrearLista", new { eleccionId = eleccionId })" class="btn btn-primary">
+                    <i data-lucide="plus" style="width: 20px; height: 20px;"></i> Nueva Lista
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (eleccion != null)
+    {
+        <div class="alert alert-info">
+            <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+            <span>Viendo listas de la elección: <strong>@eleccion.Titulo</strong> (@eleccion.Tipo)</span>
+        </div>
+    }
+
+    <div class="card">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Logo</th>
+                        <th>Nombre</th>
+                        <th>Elección</th>
+                        <th>Candidatos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var lista in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(lista.LogoUrl))
+                                    {
+                                        <img src="@lista.LogoUrl" alt="Logo" class="avatar" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-placeholder">
+                                            <i data-lucide="image" style="width: 20px; height: 20px;"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td class="font-medium">@lista.Nombre</td>
+                                <td>@(lista.Eleccion?.Titulo ?? $"#{lista.EleccionId}")</td>
+                                <td>
+                                    <span class="badge badge-outline">
+                                        @lista.Candidatos?.Count() Candidatos
+                                    </span>
+                                </td>
+                                <td>
+                                    <form asp-action="EliminarLista" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@lista.Id" />
+                                        <input type="hidden" name="eleccionId" value="@lista.EleccionId" />
+                                        <button type="submit" class="btn btn-ghost btn-sm text-error" onclick="return confirm('¿Está seguro de eliminar esta lista?');">
+                                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-8 text-muted">
+                                No hay listas registradas
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -57,7 +57,20 @@
                     </div>
                     <div class="candidate-info">
                         <h3>@candidato.Nombre</h3>
-                        <p class="candidate-party">@(candidato.PartidoPolitico ?? "Sin partido")</p>
+                        @if (candidato.Lista != null)
+                        {
+                            <p class="candidate-party" title="Pertenece a lista">
+                                <i data-lucide="layers" style="width: 14px; height: 14px; vertical-align: text-bottom;"></i>
+                                @candidato.Lista.Nombre
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="candidate-party">
+                                <i data-lucide="flag" style="width: 14px; height: 14px; vertical-align: text-bottom;"></i>
+                                @(candidato.PartidoPolitico ?? "Sin partido")
+                            </p>
+                        }
                         @{
                             var eleccionNombre = elecciones.FirstOrDefault(e => e.Id == candidato.EleccionId)?.Titulo ?? $"Eleccion #{candidato.EleccionId}";
                         }

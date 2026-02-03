@@ -1,0 +1,71 @@
+@model SistemaVoto.MVC.ViewModels.CredencialesGeneradasViewModel
+@{
+    ViewData["Title"] = "Credenciales Generadas";
+}
+
+<div class="container mt-5" style="max-width: 800px;">
+    <div class="card glass-card p-4">
+        <div class="text-center mb-4">
+             <h2 class="text-success mb-3">
+                 <i data-lucide="check-circle" style="width: 32px; height: 32px; vertical-align: bottom;"></i> 
+                 Elección Creada Exitosamente
+             </h2>
+             <h4 class="mb-3">@Model.TituloEleccion</h4>
+             <p class="text-muted">Se han generado las siguientes credenciales para los votantes (basado en número de escaños).</p>
+             <div class="alert alert-warning text-left">
+                 <i data-lucide="alert-triangle" style="width: 18px; height: 18px; vertical-align: text-bottom;"></i>
+                 <strong>Importante:</strong> Copie estas credenciales ahora. No se podrán ver las contraseñas posteriormente.
+             </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Contraseña Temporal</th>
+                        <th style="width: 100px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cred in Model.Credenciales)
+                    {
+                        <tr>
+                            <td class="font-monospace">@cred.Username</td>
+                            <td class="font-monospace text-primary">@cred.Password</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="copiarRow(this, '@cred.Username', '@cred.Password')">
+                                    <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 text-center">
+            <a href="@Url.Action("Elecciones")" class="btn btn-primary">finalizar</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+
+        function copiarRow(btn, user, pass) {
+            navigator.clipboard.writeText(`Usuario: ${user}\nContraseña: ${pass}`).then(() => {
+                var originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 1000);
+            });
+        }
+    </script>
+}

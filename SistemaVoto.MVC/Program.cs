@@ -22,6 +22,9 @@ namespace SistemaVoto.MVC
             Crud<Candidato>.UrlBase = $"{apiBaseUrl}/api/candidatos";
             Crud<Voto>.UrlBase = $"{apiBaseUrl}/api/votos";
             Crud<Lista>.UrlBase = $"{apiBaseUrl}/api/listas";
+            Crud<Ubicacion>.UrlBase = $"{apiBaseUrl}/api/ubicaciones";
+            Crud<RecintoElectoral>.UrlBase = $"{apiBaseUrl}/api/recintos";
+            Crud<EleccionUbicacion>.UrlBase = $"{apiBaseUrl}/api/eleccionubicaciones";
 
             // Configurar DbContext con PostgreSQL (misma BD que la API)
             var connectionString = builder.Configuration.GetConnectionString("DbContext.postgres-render")

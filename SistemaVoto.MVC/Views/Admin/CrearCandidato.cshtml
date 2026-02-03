@@ -1,13 +1,16 @@
+@using SistemaVoto.Modelos
+@using SistemaVoto.MVC.ViewModels
 @model CandidatoViewModel
 @{
     ViewData["Title"] = "Crear Candidato";
-    var elecciones = ViewBag.Elecciones as List<EleccionDto> ?? new List<EleccionDto>();
+    var elecciones = ViewBag.Elecciones as List<Eleccion> ?? new List<Eleccion>();
+    var listas = ViewBag.Listas as List<Lista> ?? new List<Lista>();
 }
 
 <div class="form-container">
     <div class="form-card glass-card">
         <div class="form-header">
-            <a href="/Admin/Candidatos" class="btn btn-ghost btn-sm">
+            <a href="@Url.Action("Candidatos", new { eleccionId = Model.EleccionId > 0 ? Model.EleccionId : (int?)null })" class="btn btn-ghost btn-sm">
                 <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
                 Volver
             </a>
@@ -30,16 +33,34 @@
             <div class="form-group">
                 <label asp-for="EleccionId" class="form-label">
                     <i data-lucide="vote" style="width: 16px; height: 16px;"></i>
-                    Eleccion
+                    Elección
                 </label>
-                <select asp-for="EleccionId" class="form-control">
-                    <option value="">Seleccione una eleccion...</option>
+                <select asp-for="EleccionId" class="form-control" id="selectEleccion" onchange="filterListas()">
+                    <option value="">Seleccione una elección...</option>
                     @foreach (var eleccion in elecciones)
                     {
-                        <option value="@eleccion.Id" selected="@(Model.EleccionId == eleccion.Id)">@eleccion.Titulo</option>
+                        <option value="@eleccion.Id" data-tipo="@eleccion.Tipo" selected="@(Model.EleccionId == eleccion.Id)">
+                            @eleccion.Titulo (@eleccion.Tipo)
+                        </option>
                     }
                 </select>
                 <span asp-validation-for="EleccionId" class="text-error"></span>
+            </div>
+
+            <div id="listaContainer" class="form-group" style="display:none;">
+                <label asp-for="ListaId" class="form-label">
+                    <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+                    Lista / Partido (Para Plancha/Mixta)
+                </label>
+                <select asp-for="ListaId" class="form-control" id="selectLista">
+                    <option value="">-- Candidato Independiente / Sin Lista --</option>
+                    @foreach (var lista in listas)
+                    {
+                        <option value="@lista.Id" data-eleccion-id="@lista.EleccionId" selected="@(Model.ListaId == lista.Id)">
+                            @lista.Nombre
+                        </option>
+                    }
+                </select>
             </div>
 
             <div class="form-group">
@@ -54,9 +75,10 @@
             <div class="form-group">
                 <label asp-for="PartidoPolitico" class="form-label">
                     <i data-lucide="flag" style="width: 16px; height: 16px;"></i>
-                    Partido Politico / Lista
+                    Partido Político / Organización
                 </label>
                 <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido o lista" />
+                <p class="text-muted text-xs mt-1">Si pertenece a una lista, se recomienda usar el mismo nombre.</p>
             </div>
 
             <div class="form-group">
@@ -108,9 +130,60 @@
 </style>
 
 @section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
+            filterListas(); // Run on load
         });
+
+        function filterListas() {
+            var eleccionId = document.getElementById('selectEleccion').value;
+            var eleccionOption = document.querySelector('#selectEleccion option:checked');
+            var tipo = eleccionOption ? eleccionOption.getAttribute('data-tipo') : '';
+            var listaContainer = document.getElementById('listaContainer');
+            var selectLista = document.getElementById('selectLista');
+            var options = selectLista.options;
+
+            // Mostrar container solo si es Plancha o Mixta (o si simplemente hay eleccion seleccionada para no complicar con tipos por string)
+            // Mejor verificamos el string del tipo.
+            // TipoEleccion entums: 0 (Nominal), 1 (Plancha), 2 (Mixta)
+            // Pero en data-tipo viene el valor string del enum si toString() por defecto, o int si fue serializado como int.
+            // Verifiquemos en runtime. Asumamos que si hay eleccion, intentamos filtrar listas.
+            
+            if (eleccionId) {
+                // Filtrar opciones
+                var hasListas = false;
+                for (var i = 0; i < options.length; i++) {
+                    var option = options[i];
+                    if (option.value === "") continue; // Skip default option
+
+                    var optionEleccionId = option.getAttribute('data-eleccion-id');
+                    if (optionEleccionId === eleccionId) {
+                        option.style.display = 'block';
+                        hasListas = true;
+                    } else {
+                        option.style.display = 'none';
+                    }
+                }
+                
+                // Reset selection if hidden
+                if (selectLista.selectedOptions.length > 0 && selectLista.selectedOptions[0].style.display === 'none') {
+                    selectLista.value = "";
+                }
+
+                // Mostrar container solo si el tipo lo permite o si hay listas disponibles
+                // Nominal = 0, Plancha = 1, Mixta = 2
+                // Si el backend renderiza el enum como string "Nominal", "Plancha"...
+                
+                if (tipo === 'Nominal' || tipo === '0') {
+                    listaContainer.style.display = 'none';
+                } else {
+                    listaContainer.style.display = 'block';
+                }
+            } else {
+                listaContainer.style.display = 'none';
+            }
+        }
     </script>
 }
