@@ -112,8 +112,9 @@
                             </td>
                             <td>
                                 <div class="actions-cell">
-                                    <form asp-action="EliminarUsuario" method="post" style="display: inline;"
+                                    <form asp-action="EliminarUsuarioIdentity" method="post" style="display: inline;"
                                           onsubmit="return confirm('¿Seguro que desea eliminar este usuario?')">
+                                        @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@user.Id" />
                                         <button type="submit" class="btn btn-ghost btn-sm" title="Eliminar">
                                             <i data-lucide="trash-2" style="width: 16px; height: 16px; color: var(--color-error);"></i>

@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "Voto Confirmado";
+    var eleccionTitulo = ViewBag.EleccionTitulo as string ?? "la elección";
+}
+
+<div class="confirmacion-container">
+    <div class="confirmacion-card glass-card">
+        <div class="confirmacion-icon">
+            <i data-lucide="check-circle" style="width: 80px; height: 80px; color: var(--color-success);"></i>
+        </div>
+        
+        <h1>¡Voto Registrado!</h1>
+        
+        <p class="text-muted">
+            Su voto para <strong>@eleccionTitulo</strong> ha sido registrado exitosamente en el sistema.
+        </p>
+        
+        <div class="alert alert-success">
+            <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+            <span>Su voto es anónimo y ha sido almacenado de forma segura.</span>
+        </div>
+        
+        <div class="confirmacion-actions">
+            <a href="/Elecciones" class="btn btn-primary">
+                <i data-lucide="home" style="width: 20px; height: 20px;"></i>
+                Ver Elecciones
+            </a>
+            <a href="/Auth/Logout" class="btn btn-ghost">
+                <i data-lucide="log-out" style="width: 20px; height: 20px;"></i>
+                Cerrar Sesión
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .confirmacion-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        padding: 2rem;
+    }
+    .confirmacion-card {
+        max-width: 500px;
+        text-align: center;
+        padding: 3rem;
+        border-radius: 16px;
+    }
+    .confirmacion-icon {
+        margin-bottom: 1.5rem;
+    }
+    .confirmacion-card h1 {
+        margin-bottom: 1rem;
+        color: var(--color-success);
+    }
+    .confirmacion-actions {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

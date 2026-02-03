@@ -1,0 +1,180 @@
+@using SistemaVoto.MVC.Controllers
+@using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
+@model EleccionDetalleVM
+
+@{
+    ViewData["Title"] = Model.Eleccion.Titulo;
+    var tipo = Model.Eleccion.Tipo;
+}
+
+<div class="detalle-container">
+    <div class="page-header">
+        <div>
+            <h1>@Model.Eleccion.Titulo</h1>
+            <div class="d-flex align-items-center gap-2 mt-2">
+                <span class="badge @(Model.Eleccion.Estado == "Activa" ? "badge-success" : (Model.Eleccion.Estado == "Pendiente" ? "badge-warning" : "badge-info"))">
+                    @Model.Eleccion.Estado
+                </span>
+                <span class="badge badge-outline">@Model.Eleccion.Tipo</span>
+            </div>
+        </div>
+        <a href="/Elecciones" class="btn btn-ghost">
+            <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i> Volver
+        </a>
+    </div>
+
+    <div class="eleccion-info glass-card mb-4">
+        <p class="description">@(Model.Eleccion.Descripcion ?? "Sin descripción disponible.")</p>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <i data-lucide="calendar"></i>
+                <div>
+                    <label>Inicio</label>
+                    <span>@Model.Eleccion.FechaInicioUtc.ToString("dd MMM yyyy, HH:mm")</span>
+                </div>
+            </div>
+            <div class="meta-item">
+                <i data-lucide="calendar-off"></i>
+                <div>
+                    <label>Fin</label>
+                    <span>@Model.Eleccion.FechaFinUtc.ToString("dd MMM yyyy, HH:mm")</span>
+                </div>
+            </div>
+            <div class="meta-item">
+                <i data-lucide="users"></i>
+                <div>
+                    <label>Candidatos / Listas</label>
+                    <span>@(Model.Eleccion.Tipo == "Plancha" ? Model.Listas.Count + " Listas" : Model.Candidatos.Count + " Candidatos")</span>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.PuedeVotar)
+        {
+            <div class="mt-4">
+                <a href="/Elecciones/Votar/@Model.Eleccion.Id" class="btn btn-primary btn-lg w-100">
+                    <i data-lucide="vote" style="width: 24px; height: 24px; margin-right: 12px;"></i>
+                    ¡Votar Ahora!
+                </a>
+            </div>
+        }
+        else if (Model.Eleccion.Estado == "Activa" && !User.Identity.IsAuthenticated)
+        {
+            <div class="alert alert-info mt-4">
+                <i data-lucide="info"></i>
+                <span>Debe <a href="/Auth/Login?returnUrl=/Elecciones/Detalle/@Model.Eleccion.Id">iniciar sesión</a> para participar en esta elección.</span>
+            </div>
+        }
+        else if (Model.Eleccion.Estado == "Cerrada")
+        {
+             <div class="mt-4">
+                <a href="/Resultados/@Model.Eleccion.Id" class="btn btn-primary btn-lg w-100">
+                    <i data-lucide="bar-chart" style="width: 24px; height: 24px; margin-right: 12px;"></i>
+                    Ver Resultados
+                </a>
+            </div>
+        }
+    </div>
+
+    @if (Model.Listas.Any())
+    {
+        <h2 class="section-title mt-5">Listas / Partidos</h2>
+        <div class="listas-grid">
+            @foreach (var lista in Model.Listas)
+            {
+                <div class="lista-card">
+                    <div class="lista-header">
+                        <div class="lista-logo">
+                            @if (!string.IsNullOrEmpty(lista.LogoUrl))
+                            {
+                                <img src="@lista.LogoUrl" alt="@lista.Nombre" />
+                            }
+                            else
+                            {
+                                <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+                            }
+                        </div>
+                        <h3>@lista.Nombre</h3>
+                    </div>
+                    
+                    @if (tipo == "Mixta" || tipo == "Nominal")
+                    {
+                        <div class="candidatos-lista">
+                            <h4>Candidatos</h4>
+                            <ul>
+                                @foreach (var candidato in Model.Candidatos.Where(c => c.ListaId == lista.Id))
+                                {
+                                    <li>@candidato.Nombre</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.Candidatos.Any() && (tipo == "Nominal" || tipo == "Mixta"))
+    {
+        var candidatosSinLista = Model.Candidatos.Where(c => c.ListaId == null).ToList();
+        if (candidatosSinLista.Any())
+        {
+             <h2 class="section-title mt-5">Candidatos Independientes</h2>
+             <div class="candidatos-grid">
+                @foreach (var candidato in candidatosSinLista)
+                {
+                    <div class="candidato-card">
+                        <div class="candidato-foto">
+                            @if (!string.IsNullOrEmpty(candidato.FotoUrl))
+                            {
+                                <img src="@candidato.FotoUrl" alt="@candidato.Nombre" />
+                            }
+                            else
+                            {
+                                <i data-lucide="user" style="width: 48px; height: 48px;"></i>
+                            }
+                        </div>
+                        <h3>@candidato.Nombre</h3>
+                        <p class="text-muted">@candidato.PartidoPolitico</p>
+                        @if (!string.IsNullOrEmpty(candidato.Propuestas))
+                        {
+                            <p class="propuestas">@candidato.Propuestas</p>
+                        }
+                    </div>
+                }
+             </div>
+        }
+    }
+</div>
+
+<style>
+    .detalle-container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+    .eleccion-info { padding: 2rem; }
+    .description { font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+    .meta-item { display: flex; align-items: center; gap: 1rem; }
+    .meta-item i { width: 24px; height: 24px; color: var(--accent); }
+    .meta-item div { display: flex; flex-direction: column; }
+    .meta-item label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .meta-item span { font-weight: 500; }
+    
+    .listas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .lista-card { background: var(--glass-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); }
+    .lista-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    .lista-logo { width: 48px; height: 48px; border-radius: 8px; background: var(--base-200); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .lista-logo img { width: 100%; height: 100%; object-fit: contain; }
+    
+    .candidatos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+    .candidato-card { background: var(--glass-bg); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; }
+    .candidato-foto { width: 80px; height: 80px; border-radius: 50%; background: var(--base-200); margin: 0 auto 1rem; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .candidato-foto img { width: 100%; height: 100%; object-fit: cover; }
+    .propuestas { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic; }
+</style>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

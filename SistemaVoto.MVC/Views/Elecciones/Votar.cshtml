@@ -1,0 +1,173 @@
+@using SistemaVoto.MVC.Controllers
+@using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
+@model VotarVM
+
+@{
+    ViewData["Title"] = "Votar - " + Model.EleccionTitulo;
+}
+
+<div class="votar-container">
+    <div class="page-header">
+        <div>
+            <h1>
+                <i data-lucide="vote" style="width: 32px; height: 32px;"></i>
+                Emitir Voto
+            </h1>
+            <p class="text-muted">Elección: <strong>@Model.EleccionTitulo</strong></p>
+        </div>
+        <a href="/Elecciones/Detalle/@Model.EleccionId" class="btn btn-ghost">
+            <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i> Volver
+        </a>
+    </div>
+
+    <form asp-action="Votar" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="EleccionId" />
+
+        @if (Model.TipoEleccion == TipoEleccion.Nominal)
+        {
+            <div class="alert alert-info mb-4">
+                <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                <span>Seleccione <strong>un candidato</strong> para emitir su voto.</span>
+            </div>
+
+            <div class="candidatos-grid">
+                @foreach (var candidato in Model.Candidatos)
+                {
+                    <label class="candidato-card">
+                        <input type="radio" name="CandidatoId" value="@candidato.Id" required />
+                        <div class="candidato-content">
+                            <div class="candidato-foto">
+                                @if (!string.IsNullOrEmpty(candidato.FotoUrl))
+                                {
+                                    <img src="@candidato.FotoUrl" alt="@candidato.Nombre" />
+                                }
+                                else
+                                {
+                                    <i data-lucide="user" style="width: 48px; height: 48px;"></i>
+                                }
+                            </div>
+                            <h3>@candidato.Nombre</h3>
+                            @if (!string.IsNullOrEmpty(candidato.PartidoPolitico))
+                            {
+                                <span class="badge badge-info">@candidato.PartidoPolitico</span>
+                            }
+                            @if (!string.IsNullOrEmpty(candidato.Propuestas))
+                            {
+                                <p class="text-muted mt-2">@candidato.Propuestas</p>
+                            }
+                        </div>
+                        <div class="candidato-check">
+                            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </label>
+                }
+            </div>
+        }
+        else if (Model.TipoEleccion == TipoEleccion.Plancha)
+        {
+            <div class="alert alert-info mb-4">
+                <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                <span>Seleccione <strong>una lista/partido</strong> para emitir su voto.</span>
+            </div>
+
+            <div class="listas-grid">
+                @foreach (var lista in Model.Listas)
+                {
+                    <label class="lista-card">
+                        <input type="radio" name="ListaId" value="@lista.Id" required />
+                        <div class="lista-content">
+                            <div class="lista-logo">
+                                @if (!string.IsNullOrEmpty(lista.LogoUrl))
+                                {
+                                    <img src="@lista.LogoUrl" alt="@lista.Nombre" />
+                                }
+                                else
+                                {
+                                    <i data-lucide="layers" style="width: 48px; height: 48px;"></i>
+                                }
+                            </div>
+                            <h3>@lista.Nombre</h3>
+                        </div>
+                        <div class="lista-check">
+                            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </label>
+                }
+            </div>
+        }
+        else
+        {
+            <!-- Mixta: puede votar por candidato O por lista -->
+            <div class="alert alert-info mb-4">
+                <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                <span>Puede votar por <strong>un candidato individual</strong> o por <strong>una lista completa</strong>.</span>
+            </div>
+
+            <h3 class="mb-3">Votar por Candidato</h3>
+            <div class="candidatos-grid mb-4">
+                @foreach (var candidato in Model.Candidatos)
+                {
+                    <label class="candidato-card">
+                        <input type="radio" name="CandidatoId" value="@candidato.Id" />
+                        <div class="candidato-content">
+                            <h4>@candidato.Nombre</h4>
+                            @if (!string.IsNullOrEmpty(candidato.ListaNombre))
+                            {
+                                <span class="badge badge-info">@candidato.ListaNombre</span>
+                            }
+                        </div>
+                        <div class="candidato-check">
+                            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </label>
+                }
+            </div>
+
+            <h3 class="mb-3">O Votar por Lista/Partido</h3>
+            <div class="listas-grid">
+                @foreach (var lista in Model.Listas)
+                {
+                    <label class="lista-card">
+                        <input type="radio" name="ListaId" value="@lista.Id" />
+                        <div class="lista-content">
+                            <h3>@lista.Nombre</h3>
+                        </div>
+                        <div class="lista-check">
+                            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </label>
+                }
+            </div>
+        }
+
+        <div class="d-flex justify-content-center mt-5">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i data-lucide="vote" style="width: 24px; height: 24px; margin-right: 12px;"></i>
+                Confirmar y Emitir Voto
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .votar-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .candidatos-grid, .listas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .candidato-card, .lista-card { display: flex; flex-direction: column; padding: 1.5rem; border: 2px solid var(--border-color); border-radius: 12px; cursor: pointer; transition: all 0.2s; position: relative; }
+    .candidato-card:hover, .lista-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .candidato-card input, .lista-card input { position: absolute; opacity: 0; }
+    .candidato-card:has(input:checked), .lista-card:has(input:checked) { border-color: var(--color-success); background: rgba(var(--success-rgb), 0.1); }
+    .candidato-check, .lista-check { display: none; position: absolute; top: 1rem; right: 1rem; color: var(--color-success); }
+    .candidato-card:has(input:checked) .candidato-check, .lista-card:has(input:checked) .lista-check { display: block; }
+    .candidato-foto { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: var(--base-200); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+    .candidato-foto img { width: 100%; height: 100%; object-fit: cover; }
+    .lista-logo { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: var(--base-200); border-radius: 8px; margin-bottom: 1rem; }
+    .lista-logo img { width: 100%; height: 100%; object-fit: contain; }
+</style>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

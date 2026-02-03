@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using SistemaVoto.ApiConsumer;
 using SistemaVoto.Modelos;
 using SistemaVoto.MVC.Services;
 using SistemaVoto.MVC.ViewModels;
@@ -11,10 +10,12 @@ namespace SistemaVoto.MVC.Controllers;
 /// </summary>
 public class ResultadosController : Controller
 {
+    private readonly LocalCrudService _crud;
     private readonly CalculoEscanosService _calculoEscanos;
 
-    public ResultadosController(CalculoEscanosService calculoEscanos)
+    public ResultadosController(LocalCrudService crud, CalculoEscanosService calculoEscanos)
     {
+        _crud = crud;
         _calculoEscanos = calculoEscanos;
     }
 
@@ -23,22 +24,19 @@ public class ResultadosController : Controller
     /// </summary>
     public IActionResult Index(int id)
     {
-        var eleccionResult = Crud<Eleccion>.ReadById(id);
+        var eleccion = _crud.GetEleccion(id);
         
-        if (!eleccionResult.Success || eleccionResult.Data == null)
+        if (eleccion == null)
         {
-            return NotFound();
+            TempData["Error"] = "Elección no encontrada";
+            return RedirectToAction("Elecciones", "Admin");
         }
 
-        var eleccion = eleccionResult.Data;
-        
         // Obtener candidatos de esta eleccion
-        var candidatosResult = Crud<Candidato>.ReadAll();
-        var candidatos = candidatosResult.Data?.Where(c => c.EleccionId == id).ToList() ?? new List<Candidato>();
+        var candidatos = _crud.GetCandidatosByEleccion(id);
         
         // Obtener votos
-        var votosResult = Crud<Voto>.ReadAll();
-        var votos = votosResult.Data?.Where(v => v.EleccionId == id).ToList() ?? new List<Voto>();
+        var votos = _crud.GetVotosByEleccion(id);
         
         // Construir resultados
         var totalVotos = votos.Count;
@@ -104,19 +102,13 @@ public class ResultadosController : Controller
     [HttpGet]
     public IActionResult ExportarCsv(int id)
     {
-        var eleccionResult = Crud<Eleccion>.ReadById(id);
-        if (!eleccionResult.Success || eleccionResult.Data == null)
+        var eleccion = _crud.GetEleccion(id);
+        if (eleccion == null)
             return NotFound();
-
-        var eleccion = eleccionResult.Data;
         
         // Obtener candidatos y votos
-        var candidatosResult = Crud<Candidato>.ReadAll();
-        var candidatos = candidatosResult.Data?.Where(c => c.EleccionId == id).ToList() ?? new List<Candidato>();
-        
-        var votosResult = Crud<Voto>.ReadAll();
-        var votos = votosResult.Data?.Where(v => v.EleccionId == id).ToList() ?? new List<Voto>();
-        
+        var candidatos = _crud.GetCandidatosByEleccion(id);
+        var votos = _crud.GetVotosByEleccion(id);
         var totalVotos = votos.Count;
 
         var csv = new System.Text.StringBuilder();
@@ -141,18 +133,15 @@ public class ResultadosController : Controller
     [HttpGet]
     public IActionResult GetDatosGrafico(int id)
     {
-        var eleccionResult = Crud<Eleccion>.ReadById(id);
-        if (!eleccionResult.Success || eleccionResult.Data == null)
+        var eleccion = _crud.GetEleccion(id);
+        if (eleccion == null)
             return Json(new { success = false, message = "Elección no encontrada" });
 
         // Obtener candidatos y votos
-        var candidatosResult = Crud<Candidato>.ReadAll();
-        var candidatos = candidatosResult.Data?.Where(c => c.EleccionId == id).ToList() ?? new List<Candidato>();
-        
-        var votosResult = Crud<Voto>.ReadAll();
-        var votos = votosResult.Data?.Where(v => v.EleccionId == id).ToList() ?? new List<Voto>();
-        
+        var candidatos = _crud.GetCandidatosByEleccion(id);
+        var votos = _crud.GetVotosByEleccion(id);
         var totalVotos = votos.Count;
+        
         var candidatosConVotos = candidatos.Select(c => new
         {
             Nombre = c.Nombre,

@@ -45,7 +45,7 @@
                                 <option value="">-- Seleccione una Elección --</option>
                                 @if (elecciones != null)
                                 {
-                                    foreach(var e in elecciones.Where(x => x.Tipo == TipoEleccion.Plancha || x.Tipo == TipoEleccion.Mixta))
+                                    foreach(var e in elecciones)
                                     {
                                         <option value="@e.Id">@e.Titulo (@e.Tipo)</option>
                                     }

@@ -68,6 +68,7 @@ namespace SistemaVoto.MVC
             // Registrar servicios
             builder.Services.AddScoped<JwtAuthService>();
             builder.Services.AddScoped<CalculoEscanosService>();
+            builder.Services.AddScoped<LocalCrudService>();
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();

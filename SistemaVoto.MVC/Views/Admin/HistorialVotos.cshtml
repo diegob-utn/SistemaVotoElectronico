@@ -16,7 +16,7 @@
             </h1>
             <p class="text-muted">Auditoria de votos anonimizados</p>
         </div>
-        <div class="filter-controls">
+        <div class="filter-controls" style="display: flex; gap: 1rem;">
             <select id="eleccionFilter" class="form-control" onchange="filterByEleccion()">
                 <option value="">Todas las elecciones</option>
                 @foreach (var eleccion in elecciones)
@@ -24,6 +24,10 @@
                     <option value="@eleccion.Id" selected="@(eleccionId == eleccion.Id)">@eleccion.Titulo</option>
                 }
             </select>
+            <a href="@Url.Action("ExportarHistorialCsv", new { eleccionId = eleccionId })" class="btn btn-secondary">
+                <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+                CSV
+            </a>
         </div>
     </div>
 

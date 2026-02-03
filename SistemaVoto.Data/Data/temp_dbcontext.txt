@@ -15,9 +15,6 @@ namespace SistemaVoto.Data.Data
         public DbSet<Candidato> Candidatos => Set<Candidato>();
         public DbSet<Voto> Votos => Set<Voto>();
         public DbSet<HistorialVotacion> HistorialVotaciones => Set<HistorialVotacion>();
-        
-        // HistorialVoto para control de doble voto (Identity User Link)
-        public DbSet<HistorialVoto> HistorialVotos => Set<HistorialVoto>();
 
         //  NUEVO
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
@@ -146,11 +143,11 @@ namespace SistemaVoto.Data.Data
 
             mb.Entity<Eleccion>().ToTable(t => t.HasCheckConstraint(
                 "CK_Eleccion_EscanosSegunTipo",
-                "(\"Tipo\" = 0 AND \"NumEscanos\" = 0) OR ((\"Tipo\" = 1 OR \"Tipo\" = 2) AND \"NumEscanos\" > 0)"
+                "(\"Tipo\" = 0 AND \"NumEscanos\" = 0) OR (\"Tipo\" = 1 AND \"NumEscanos\" > 0)"
             ));
 
             // -------------------------
-            // Índices
+            // �ndices
             // -------------------------
             mb.Entity<Voto>().HasIndex(v => new { v.EleccionId, v.CandidatoId });
             mb.Entity<Voto>().HasIndex(v => new { v.EleccionId, v.ListaId });

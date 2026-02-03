@@ -31,6 +31,7 @@ namespace SistemaVoto.MVC.ViewModels
         public int EleccionId { get; set; }
         public string? EleccionTitulo { get; set; }
         public int? ListaId { get; set; }
+        public string? ListaNombre { get; set; }
         public int NumVotos { get; set; }
     }
 

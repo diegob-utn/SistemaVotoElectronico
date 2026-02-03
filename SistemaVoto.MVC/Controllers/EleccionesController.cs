@@ -1,102 +1,290 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SistemaVoto.Modelos;
 using SistemaVoto.MVC.Services;
 using SistemaVoto.MVC.ViewModels;
 
 namespace SistemaVoto.MVC.Controllers;
 
 /// <summary>
-/// Controlador para gestion y visualizacion de elecciones
+/// Controlador para gestion y visualizacion de elecciones públicas (para votantes)
 /// </summary>
 public class EleccionesController : Controller
 {
-    private readonly ApiService _api;
-    private readonly JwtAuthService _authService;
+    private readonly LocalCrudService _crud;
 
-    public EleccionesController(ApiService api, JwtAuthService authService)
+    public EleccionesController(LocalCrudService crud)
     {
-        _api = api;
-        _authService = authService;
+        _crud = crud;
     }
 
     /// <summary>
-    /// Lista de elecciones disponibles
+    /// Lista de elecciones disponibles para el público
     /// </summary>
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
-        var result = await _api.GetAsync<List<EleccionDto>>("api/elecciones");
-        var elecciones = result.Success ? result.Data ?? new List<EleccionDto>() : new List<EleccionDto>();
+        var elecciones = _crud.GetElecciones();
         
-        // Clasificar por estado
-        var model = new EleccionesIndexViewModel
+        // Filtrar si el usuario es un votante generado para una elección específica
+        if (User.Identity?.IsAuthenticated == true && User.IsInRole("Usuario"))
         {
-            Activas = elecciones.Where(e => e.Estado == "Activa").ToList(),
-            Pendientes = elecciones.Where(e => e.Estado == "Pendiente").ToList(),
-            Finalizadas = elecciones.Where(e => e.Estado == "Finalizada").ToList()
-        };
-        
-        return View(model);
-    }
-
-    /// <summary>
-    /// Detalle de una eleccion especifica
-    /// </summary>
-    public async Task<IActionResult> Detalle(int id)
-    {
-        var eleccionResult = await _api.GetAsync<EleccionDto>($"api/elecciones/{id}");
-        
-        if (!eleccionResult.Success || eleccionResult.Data == null)
-        {
-            return NotFound();
-        }
-
-        var candidatosResult = await _api.GetAsync<List<CandidatoDto>>($"api/elecciones/{id}/candidatos");
-        
-        var model = new EleccionDetalleViewModel
-        {
-            Eleccion = eleccionResult.Data,
-            Candidatos = candidatosResult.Success ? candidatosResult.Data ?? new List<CandidatoDto>() : new List<CandidatoDto>()
-        };
-        
-        // Verificar si el usuario ya voto
-        if (_authService.IsAuthenticated())
-        {
-            var user = _authService.GetCurrentUser();
-            var userId = user?.FindFirst("id")?.Value;
-            
-            if (!string.IsNullOrEmpty(userId))
+            var userName = User.Identity.Name;
+            // Patrón: votante_{EleccionId}_{Index}
+            var parts = userName?.Split('_');
+            if (parts?.Length >= 2 && parts[0] == "votante" && int.TryParse(parts[1], out int userEleccionId))
             {
-                var historialResult = await _api.GetAsync<HistorialVotoDto>($"api/elecciones/{id}/historial/{userId}");
-                model.YaVoto = historialResult.Success && historialResult.Data != null;
+                elecciones = elecciones.Where(e => e.Id == userEleccionId).ToList();
             }
         }
+
+        // Clasificar por estado
+        var model = new EleccionesIndexVM
+        {
+            Activas = elecciones.Where(e => e.Estado == EstadoEleccion.Activa).Select(MapToDto).ToList(),
+            Pendientes = elecciones.Where(e => e.Estado == EstadoEleccion.Pendiente).Select(MapToDto).ToList(),
+            Finalizadas = elecciones.Where(e => e.Estado == EstadoEleccion.Cerrada).Select(MapToDto).ToList()
+        };
         
         return View(model);
     }
+
+    /// <summary>
+    /// Detalle de una eleccion especifica y sus candidatos
+    /// </summary>
+    public IActionResult Detalle(int id)
+    {
+        var eleccion = _crud.GetEleccion(id);
+        
+        if (eleccion == null)
+        {
+            TempData["Error"] = "Elección no encontrada";
+            return RedirectToAction("Index");
+        }
+
+        var candidatos = _crud.GetCandidatosByEleccion(id);
+        var listas = _crud.GetListasByEleccion(id);
+        
+        var model = new EleccionDetalleVM
+        {
+            Eleccion = MapToDto(eleccion),
+            Candidatos = candidatos.Select(c => new CandidatoDto
+            {
+                Id = c.Id,
+                Nombre = c.Nombre,
+                PartidoPolitico = c.PartidoPolitico ?? "",
+                FotoUrl = c.FotoUrl,
+                Propuestas = c.Propuestas,
+                ListaNombre = listas.FirstOrDefault(l => l.Id == c.ListaId)?.Nombre
+            }).ToList(),
+            Listas = listas.Select(l => new ListaInfoDto
+            {
+                Id = l.Id,
+                Nombre = l.Nombre,
+                LogoUrl = l.LogoUrl,
+                CandidatosCount = candidatos.Count(c => c.ListaId == l.Id)
+            }).ToList()
+        };
+        
+        // Verificar si el usuario puede votar
+        model.PuedeVotar = eleccion.Estado == EstadoEleccion.Activa && 
+                          User.Identity?.IsAuthenticated == true;
+        
+        return View(model);
+    }
+
+    /// <summary>
+    /// Proceso de votación
+    /// </summary>
+    [HttpGet]
+    public IActionResult Votar(int id)
+    {
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            TempData["Error"] = "Debe iniciar sesión para votar";
+            return RedirectToAction("Login", "Auth", new { returnUrl = $"/Elecciones/Votar/{id}" });
+        }
+
+        var eleccion = _crud.GetEleccion(id);
+        if (eleccion == null || eleccion.Estado != EstadoEleccion.Activa)
+        {
+            TempData["Error"] = "Esta elección no está disponible para votar";
+            return RedirectToAction("Index");
+        }
+
+        var candidatos = _crud.GetCandidatosByEleccion(id);
+        var listas = _crud.GetListasByEleccion(id);
+
+        var model = new VotarVM
+        {
+            EleccionId = eleccion.Id,
+            EleccionTitulo = eleccion.Titulo,
+            TipoEleccion = eleccion.Tipo,
+            Candidatos = candidatos.Select(c => new CandidatoDto
+            {
+                Id = c.Id,
+                Nombre = c.Nombre,
+                PartidoPolitico = c.PartidoPolitico ?? "",
+                FotoUrl = c.FotoUrl,
+                Propuestas = c.Propuestas,
+                ListaNombre = listas.FirstOrDefault(l => l.Id == c.ListaId)?.Nombre
+            }).ToList(),
+            Listas = listas.Select(l => new ListaInfoDto
+            {
+                Id = l.Id,
+                Nombre = l.Nombre,
+                LogoUrl = l.LogoUrl
+            }).ToList()
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Votar(VotarPostVM model)
+    {
+        if (!User.Identity?.IsAuthenticated ?? true)
+        {
+            return RedirectToAction("Login", "Auth");
+        }
+
+        var eleccion = _crud.GetEleccion(model.EleccionId);
+        if (eleccion == null || eleccion.Estado != EstadoEleccion.Activa)
+        {
+            TempData["Error"] = "Esta elección no está disponible para votar";
+            return RedirectToAction("Index");
+        }
+
+        // Verificar que el candidato o lista pertenezcan a la elección
+        if (model.CandidatoId.HasValue)
+        {
+            var candidato = _crud.GetCandidato(model.CandidatoId.Value);
+            if (candidato == null || candidato.EleccionId != model.EleccionId)
+            {
+                TempData["Error"] = "Candidato inválido";
+                return RedirectToAction("Votar", new { id = model.EleccionId });
+            }
+        }
+
+        // Verificar si ya ha votado (usando Identity User Id)
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        
+        // Validar si el usuario corresponde a esta elección (si es votante generado)
+        var userName = User.Identity?.Name;
+        if (userName != null && userName.StartsWith("votante_"))
+        {
+            var parts = userName.Split('_');
+            if (parts.Length >= 2 && int.TryParse(parts[1], out int userEleccionId))
+            {
+                if (userEleccionId != model.EleccionId)
+                {
+                    TempData["Error"] = "Usted no está autorizado para votar en esta elección.";
+                    return RedirectToAction("Index");
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            if (_crud.HasVoted(model.EleccionId, userId))
+            {
+                TempData["Error"] = "Usted ya ha emitido su voto en esta elección.";
+                return RedirectToAction("Confirmacion", new { id = model.EleccionId });
+            }
+        }
+
+        try
+        {
+            // Crear el voto (anónimo - sin UsuarioId en la tabla Voto)
+            var voto = new Voto
+            {
+                EleccionId = model.EleccionId,
+                CandidatoId = model.CandidatoId,
+                ListaId = model.ListaId,
+                FechaVotoUtc = DateTime.UtcNow,
+                HashPrevio = "GENESIS", 
+                HashActual = Guid.NewGuid().ToString() // Simple hash generation for now
+            };
+
+            _crud.CreateVoto(voto);
+            
+            // Registrar en historial para prevenir doble voto
+            if (!string.IsNullOrEmpty(userId))
+            {
+                _crud.RegisterVotoHistorial(model.EleccionId, userId);
+            }
+
+            TempData["Success"] = "¡Su voto ha sido registrado exitosamente!";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Error al registrar voto: {ex.Message}";
+            return RedirectToAction("Votar", new { id = model.EleccionId });
+        }
+
+        return RedirectToAction("Confirmacion", new { id = model.EleccionId });
+    }
+
+    public IActionResult Confirmacion(int id)
+    {
+        var eleccion = _crud.GetEleccion(id);
+        if (eleccion == null)
+        {
+            return RedirectToAction("Index");
+        }
+
+        ViewBag.EleccionTitulo = eleccion.Titulo;
+        return View();
+    }
+
+    private static EleccionDto MapToDto(Eleccion e) => new EleccionDto
+    {
+        Id = e.Id,
+        Titulo = e.Titulo,
+        Descripcion = e.Descripcion,
+        Tipo = e.Tipo.ToString(),
+        NumEscanos = e.NumEscanos,
+        Estado = e.Estado.ToString(),
+        FechaInicioUtc = e.FechaInicioUtc,
+        FechaFinUtc = e.FechaFinUtc
+    };
 }
 
-// ViewModels para Elecciones
-public class EleccionesIndexViewModel
+// ViewModels específicos para Elecciones públicas
+public class EleccionesIndexVM
 {
     public List<EleccionDto> Activas { get; set; } = new();
     public List<EleccionDto> Pendientes { get; set; } = new();
     public List<EleccionDto> Finalizadas { get; set; } = new();
 }
 
-public class EleccionDetalleViewModel
+public class EleccionDetalleVM
 {
     public EleccionDto Eleccion { get; set; } = null!;
     public List<CandidatoDto> Candidatos { get; set; } = new();
-    public bool YaVoto { get; set; }
+    public List<ListaInfoDto> Listas { get; set; } = new();
+    public bool PuedeVotar { get; set; }
 }
 
-// CandidatoDto esta definido en AdminController
-
-public class HistorialVotoDto
+public class ListaInfoDto
 {
     public int Id { get; set; }
-    public int UsuarioId { get; set; }
-    public int EleccionId { get; set; }
-    public DateTime FechaVotoUtc { get; set; }
+    public string Nombre { get; set; } = "";
+    public string? LogoUrl { get; set; }
+    public int CandidatosCount { get; set; }
 }
 
+public class VotarVM
+{
+    public int EleccionId { get; set; }
+    public string EleccionTitulo { get; set; } = "";
+    public TipoEleccion TipoEleccion { get; set; }
+    public List<CandidatoDto> Candidatos { get; set; } = new();
+    public List<ListaInfoDto> Listas { get; set; } = new();
+}
+
+public class VotarPostVM
+{
+    public int EleccionId { get; set; }
+    public int? CandidatoId { get; set; }
+    public int? ListaId { get; set; }
+}

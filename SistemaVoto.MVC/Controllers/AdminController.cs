@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaVoto.ApiConsumer;
 using SistemaVoto.Modelos;
 using SistemaVoto.MVC.ViewModels;
+using SistemaVoto.MVC.Services;
 
 namespace SistemaVoto.MVC.Controllers;
 
@@ -15,13 +16,16 @@ public class AdminController : Controller
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly LocalCrudService _crud;
 
     public AdminController(
         UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        LocalCrudService crud)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _crud = crud;
     }
 
     #region Dashboard
@@ -31,8 +35,7 @@ public class AdminController : Controller
     /// </summary>
     public IActionResult Dashboard()
     {
-        var eleccionesResult = Crud<Eleccion>.ReadAll();
-        var elecciones = eleccionesResult.Data ?? new List<Eleccion>();
+        var elecciones = _crud.GetElecciones();
         
         var stats = new DashboardViewModel
         {
@@ -54,13 +57,7 @@ public class AdminController : Controller
     /// </summary>
     public IActionResult Elecciones()
     {
-        var result = Crud<Eleccion>.ReadAll();
-        if (!result.Success)
-        {
-            Console.WriteLine($"[ERROR] AdminController.Elecciones: {result.Message}");
-            ViewBag.Error = result.Message;
-        }
-        var elecciones = result.Data ?? new List<Eleccion>();
+        var elecciones = _crud.GetElecciones();
         return View(elecciones);
     }
 
@@ -70,8 +67,7 @@ public class AdminController : Controller
     [HttpGet]
     public IActionResult CrearEleccion()
     {
-        var ubicacionesRes = Crud<Ubicacion>.ReadAll();
-        ViewBag.Ubicaciones = ubicacionesRes.Data?.OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList() ?? new List<Ubicacion>();
+        ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
         return View(new EleccionViewModel());
     }
 
@@ -114,44 +110,47 @@ public class AdminController : Controller
             ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna
         };
 
-        var result = Crud<Eleccion>.Create(eleccion);
-
-        if (!result.Success)
+        Eleccion? createdEleccion = null;
+        try
         {
-            model.ErrorMessage = result.Message ?? "Error al crear eleccion";
-            var ubicacionesRes = Crud<Ubicacion>.ReadAll();
-            ViewBag.Ubicaciones = ubicacionesRes.Data?.OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList() ?? new List<Ubicacion>();
+            createdEleccion = _crud.CreateEleccion(eleccion);
+        }
+        catch (Exception ex)
+        {
+            model.ErrorMessage = ex.Message;
+            ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
             return View(model);
         }
 
-        if (model.UsaUbicacion && model.UbicacionesSeleccionadas != null && model.UbicacionesSeleccionadas.Any() && result.Data != null)
+        if (model.UsaUbicacion && model.UbicacionesSeleccionadas != null && model.UbicacionesSeleccionadas.Any())
         {
              foreach(var ubicacionId in model.UbicacionesSeleccionadas)
              {
                  var relacion = new EleccionUbicacion 
                  { 
-                     EleccionId = result.Data.Id, 
+                     EleccionId = createdEleccion.Id, 
                      UbicacionId = ubicacionId 
                  };
-                 Crud<EleccionUbicacion>.Create(relacion);
+                 _crud.CreateEleccionUbicacion(relacion);
              }
         }
 
-        // Generar usuarios automaticos
+        // Generar usuarios automaticos con formato email
         var usuariosGenerados = new List<UsuarioCredencial>();
-        if (usuariosAGenerar > 0 && result.Data != null)
+        if (usuariosAGenerar > 0)
         {
             for(int i = 0; i < usuariosAGenerar; i++)
             {
                 var password = GenerateRandomPassword();
-                var username = $"votante_{result.Data.Id}_{i+1}";
-                var user = new IdentityUser { UserName = username, Email = $"{username}@sistema.local", EmailConfirmed = true };
+                // Usar email como username para que funcione el login
+                var email = $"votante_{createdEleccion.Id}_{i+1}@sistema.local";
+                var user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
                 
                 var createResult = await _userManager.CreateAsync(user, password);
                 if (createResult.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, "Usuario");
-                    usuariosGenerados.Add(new UsuarioCredencial { Username = username, Password = password });
+                    usuariosGenerados.Add(new UsuarioCredencial { Username = email, Password = password });
                 }
             }
         }
@@ -160,8 +159,8 @@ public class AdminController : Controller
         {
             var credsModel = new CredencialesGeneradasViewModel
             {
-                EleccionId = result.Data?.Id ?? 0,
-                TituloEleccion = result.Data?.Titulo ?? model.Titulo,
+                EleccionId = createdEleccion.Id,
+                TituloEleccion = createdEleccion.Titulo,
                 Credenciales = usuariosGenerados
             };
             return View("CredencialesGeneradas", credsModel);
@@ -205,15 +204,14 @@ public class AdminController : Controller
     [HttpGet]
     public IActionResult EditarEleccion(int id)
     {
-        var result = Crud<Eleccion>.ReadById(id);
+        var eleccion = _crud.GetEleccion(id);
         
-        if (!result.Success || result.Data == null)
+        if (eleccion == null)
         {
             TempData["Error"] = "Eleccion no encontrada";
             return RedirectToAction("Elecciones");
         }
 
-        var eleccion = result.Data;
         var model = new EleccionViewModel
         {
             Id = eleccion.Id,
@@ -228,12 +226,10 @@ public class AdminController : Controller
             ModoUbicacion = eleccion.ModoUbicacion
         };
         
-        var ubicacionesRes = Crud<Ubicacion>.ReadAll();
-        ViewBag.Ubicaciones = ubicacionesRes.Data?.OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList() ?? new List<Ubicacion>();
+        ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
 
         // Cargar selecciones actuales
-        var asociacionesRes = Crud<EleccionUbicacion>.ReadAll();
-        var actuales = asociacionesRes.Data?.Where(x => x.EleccionId == id).Select(x => x.UbicacionId).ToList() ?? new List<int>();
+        var actuales = _crud.GetEleccionUbicacionesByEleccion(id).Select(x => x.UbicacionId).ToList();
         model.UbicacionesSeleccionadas = actuales;
 
         return View(model);
@@ -248,6 +244,7 @@ public class AdminController : Controller
     {
         if (!ModelState.IsValid)
         {
+            ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
             return View(model);
         }
 
@@ -275,19 +272,21 @@ public class AdminController : Controller
             ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna
         };
 
-        var result = Crud<Eleccion>.Update(model.Id.ToString(), eleccion);
-
-        if (!result.Success)
+        try
         {
-            model.ErrorMessage = result.Message ?? "Error al actualizar eleccion";
+            _crud.UpdateEleccion(eleccion);
+        }
+        catch (Exception ex)
+        {
+            model.ErrorMessage = ex.Message;
+            ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
             return View(model);
         }
 
         // Actualizar Ubicaciones
         if (model.UsaUbicacion)
         {
-             var asociacionesRes = Crud<EleccionUbicacion>.ReadAll();
-             var actuales = asociacionesRes.Data?.Where(x => x.EleccionId == model.Id).ToList() ?? new List<EleccionUbicacion>();
+             var actuales = _crud.GetEleccionUbicacionesByEleccion(model.Id);
              var actualesIds = actuales.Select(x => x.UbicacionId).ToList();
              var nuevosIds = model.UbicacionesSeleccionadas ?? new List<int>();
 
@@ -296,7 +295,7 @@ public class AdminController : Controller
              {
                  if (!nuevosIds.Contains(rel.UbicacionId))
                  {
-                     Crud<EleccionUbicacion>.Delete(rel.Id);
+                     _crud.DeleteEleccionUbicacion(rel.Id);
                  }
              }
              
@@ -305,7 +304,7 @@ public class AdminController : Controller
              {
                  if (!actualesIds.Contains(nid))
                  {
-                     Crud<EleccionUbicacion>.Create(new EleccionUbicacion { EleccionId = model.Id, UbicacionId = nid });
+                     _crud.CreateEleccionUbicacion(new EleccionUbicacion { EleccionId = model.Id, UbicacionId = nid });
                  }
              }
         }
@@ -321,12 +320,15 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult EliminarEleccion(int id)
     {
-        var result = Crud<Eleccion>.Delete(id);
-        
-        if (result.Success)
+        try
+        {
+            _crud.DeleteEleccion(id);
             TempData["Success"] = "Eleccion eliminada";
-        else
-            TempData["Error"] = result.Message ?? "No se pudo eliminar la eleccion";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
 
         return RedirectToAction("Elecciones");
     }
@@ -338,16 +340,14 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult ToggleActivarEleccion(int id)
     {
-        var result = Crud<Eleccion>.ReadById(id);
+        var eleccion = _crud.GetEleccion(id);
         
-        if (!result.Success || result.Data == null)
+        if (eleccion == null)
         {
             TempData["Error"] = "Elección no encontrada";
             return RedirectToAction("Elecciones");
         }
 
-        var eleccion = result.Data;
-        
         // Toggle estado
         if (eleccion.Estado == EstadoEleccion.Activa)
         {
@@ -360,16 +360,15 @@ public class AdminController : Controller
             eleccion.Activo = true;
         }
 
-        var updateResult = Crud<Eleccion>.Update(id.ToString(), eleccion);
-        
-        if (updateResult.Success)
+        try
         {
+            _crud.UpdateEleccion(eleccion);
             var estadoText = eleccion.Estado == EstadoEleccion.Activa ? "activada" : "desactivada";
             TempData["Success"] = $"Elección {estadoText} exitosamente";
         }
-        else
+        catch (Exception ex)
         {
-            TempData["Error"] = updateResult.Message ?? "Error al cambiar estado";
+            TempData["Error"] = ex.Message;
         }
 
         return RedirectToAction("Elecciones");
@@ -815,12 +814,9 @@ public class AdminController : Controller
     /// </summary>
     public IActionResult HistorialVotos(int? eleccionId = null)
     {
-        var votosResult = Crud<Voto>.ReadAll();
-        var eleccionesResult = Crud<Eleccion>.ReadAll();
+        var votos = _crud.GetVotos();
+        var elecciones = _crud.GetElecciones();
         
-        var votos = votosResult.Data ?? new List<Voto>();
-        var elecciones = eleccionesResult.Data ?? new List<Eleccion>();
-
         if (eleccionId.HasValue)
         {
             votos = votos.Where(v => v.EleccionId == eleccionId.Value).ToList();
@@ -832,17 +828,34 @@ public class AdminController : Controller
         return View(votos);
     }
 
+    [HttpGet]
+    public IActionResult ExportarHistorialCsv(int? eleccionId)
+    {
+        var votos = _crud.GetVotos();
+        if (eleccionId.HasValue)
+            votos = votos.Where(v => v.EleccionId == eleccionId.Value).ToList();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Hash,FechaUtc,Eleccion,Candidato/Lista");
+        
+        foreach (var v in votos)
+        {
+            var candidatoOLista = v.Candidato?.Nombre ?? v.Lista?.Nombre ?? "N/A";
+            csv.AppendLine($"{v.HashActual},{v.FechaVotoUtc:O},{v.Eleccion?.Titulo},{candidatoOLista}");
+        }
+
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+        return File(bytes, "text/csv", $"historial_votos_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
     #endregion
 
     #region Listas y Partidos
 
     public IActionResult Listas(int? eleccionId)
     {
-        var listasRes = Crud<Lista>.ReadAll();
-        var eleccionesRes = Crud<Eleccion>.ReadAll();
-        
-        var listas = listasRes.Data ?? new List<Lista>();
-        var elecciones = eleccionesRes.Data ?? new List<Eleccion>();
+        var listas = _crud.GetListas();
+        var elecciones = _crud.GetElecciones();
 
         if (eleccionId.HasValue && eleccionId.Value > 0)
         {
@@ -860,8 +873,7 @@ public class AdminController : Controller
     [HttpGet]
     public IActionResult CrearLista(int? eleccionId)
     {
-        var eleccionesRes = Crud<Eleccion>.ReadAll();
-        ViewBag.Elecciones = eleccionesRes.Data ?? new List<Eleccion>();
+        ViewBag.Elecciones = _crud.GetElecciones();
         
         var model = new ListaViewModel
         {
@@ -884,8 +896,7 @@ public class AdminController : Controller
     {
         if (!ModelState.IsValid)
         {
-             var eleccionesRes = Crud<Eleccion>.ReadAll();
-             ViewBag.Elecciones = eleccionesRes.Data ?? new List<Eleccion>();
+             ViewBag.Elecciones = _crud.GetElecciones();
              return View(model);
         }
 
@@ -896,27 +907,28 @@ public class AdminController : Controller
             EleccionId = model.EleccionId
         };
 
-        var result = Crud<Lista>.Create(lista);
-        if (result.Success)
+        try
         {
+            _crud.CreateLista(lista);
             TempData["Success"] = "Lista creada exitosamente";
             return RedirectToAction("Listas", new { eleccionId = model.EleccionId });
         }
+        catch (Exception ex)
+        {
+            model.ErrorMessage = ex.Message;
+        }
 
-        model.ErrorMessage = result.Message;
-        var eRes = Crud<Eleccion>.ReadAll();
-        ViewBag.Elecciones = eRes.Data ?? new List<Eleccion>();
+        ViewBag.Elecciones = _crud.GetElecciones();
         return View(model);
     }
 
     [HttpGet]
     public IActionResult EditarLista(int id)
     {
-        var res = Crud<Lista>.ReadById(id);
-        if (!res.Success || res.Data == null) return RedirectToAction("Listas");
+        var l = _crud.GetLista(id);
+        if (l == null) return RedirectToAction("Listas");
 
-        var l = res.Data;
-        var eleccionRes = Crud<Eleccion>.ReadById(l.EleccionId);
+        var eleccion = _crud.GetEleccion(l.EleccionId);
         
         var model = new ListaViewModel
         {
@@ -924,7 +936,7 @@ public class AdminController : Controller
             Nombre = l.Nombre,
             LogoUrl = l.LogoUrl,
             EleccionId = l.EleccionId,
-            EleccionTitulo = eleccionRes.Data?.Titulo
+            EleccionTitulo = eleccion?.Titulo
         };
         return View(model);
     }
@@ -969,22 +981,20 @@ public class AdminController : Controller
 
     #region Candidatos
 
-    public IActionResult Candidatos(int eleccionId)
+    public IActionResult Candidatos(int eleccionId = 0)
     {
-        var candRes = Crud<Candidato>.ReadAll();
-        var eleccionRes = Crud<Eleccion>.ReadById(eleccionId);
-
-        var candidatos = candRes.Data ?? new List<Candidato>();
-        candidatos = candidatos.Where(c => c.EleccionId == eleccionId).ToList();
+        var candidatos = eleccionId > 0 
+            ? _crud.GetCandidatosByEleccion(eleccionId) 
+            : _crud.GetCandidatos();
+            
+        var eleccion = eleccionId > 0 ? _crud.GetEleccion(eleccionId) : null;
 
         // Cargar nombres de listas si aplica
-        var listasRes = Crud<Lista>.ReadAll();
-        var listas = listasRes.Data ?? new List<Lista>();
-        ViewBag.Listas = listas;
+        ViewBag.Listas = _crud.GetListas();
 
         ViewBag.EleccionId = eleccionId;
-        ViewBag.Eleccion = eleccionRes.Data;
-        ViewBag.EleccionTitulo = eleccionRes.Data?.Titulo;
+        ViewBag.Eleccion = eleccion;
+        ViewBag.EleccionTitulo = eleccion?.Titulo ?? "Todas las Elecciones";
 
         return View(candidatos);
     }
@@ -993,26 +1003,22 @@ public class AdminController : Controller
     public IActionResult CrearCandidato(int? eleccionId)
     {
         // Siempre cargar todas las elecciones para el selector
-        var eleccionesRes = Crud<Eleccion>.ReadAll();
-        ViewBag.Elecciones = eleccionesRes.Data ?? new List<Eleccion>();
+        ViewBag.Elecciones = _crud.GetElecciones();
         
         var model = new CandidatoViewModel();
         
         if (eleccionId.HasValue && eleccionId.Value > 0)
         {
-            var eleccionRes = Crud<Eleccion>.ReadById(eleccionId.Value);
-            var eleccion = eleccionRes.Data;
+            var eleccion = _crud.GetEleccion(eleccionId.Value);
 
             model.EleccionId = eleccionId.Value;
             model.EleccionTitulo = eleccion?.Titulo;
             
             // Si es plancha/mixta, cargar listas
-            if (eleccion != null && (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta))
+            if (eleccion != null)
             {
-                var listasRes = Crud<Lista>.ReadAll();
-                var listas = listasRes.Data?.Where(l => l.EleccionId == eleccionId.Value).ToList() ?? new List<Lista>();
-                ViewBag.Listas = listas;
-                model.RequiereLista = true;
+                ViewBag.Listas = _crud.GetListasByEleccion(eleccionId.Value);
+                model.RequiereLista = true; // Permitir seleccionar lista/partido para todos los tipos
             }
         }
 
@@ -1026,12 +1032,8 @@ public class AdminController : Controller
         if (!ModelState.IsValid)
         {
             // Recargar elecciones y listas en caso de error
-            var eleccionesRes = Crud<Eleccion>.ReadAll();
-            ViewBag.Elecciones = eleccionesRes.Data ?? new List<Eleccion>();
-            
-            var listasRes = Crud<Lista>.ReadAll();
-            var listas = listasRes.Data?.Where(l => l.EleccionId == model.EleccionId).ToList() ?? new List<Lista>();
-            ViewBag.Listas = listas;
+            ViewBag.Elecciones = _crud.GetElecciones();
+            ViewBag.Listas = _crud.GetListasByEleccion(model.EleccionId);
             return View(model);
         }
 
@@ -1045,30 +1047,31 @@ public class AdminController : Controller
             ListaId = model.RequiereLista ? model.ListaId : null
         };
 
-        var result = Crud<Candidato>.Create(candidato);
-        if (result.Success)
+        try
         {
+            _crud.CreateCandidato(candidato);
             TempData["Success"] = "Candidato registrado";
             return RedirectToAction("Candidatos", new { eleccionId = model.EleccionId });
         }
+        catch (Exception ex)
+        {
+            model.ErrorMessage = ex.Message;
+        }
 
-        model.ErrorMessage = result.Message;
         // Recargar listas
-        var lRes = Crud<Lista>.ReadAll();
-        ViewBag.Listas = lRes.Data?.Where(l => l.EleccionId == model.EleccionId).ToList() ?? new List<Lista>();
+        ViewBag.Elecciones = _crud.GetElecciones();
+        ViewBag.Listas = _crud.GetListasByEleccion(model.EleccionId);
         return View(model);
     }
 
     [HttpGet]
     public IActionResult EditarCandidato(int id)
     {
-        var res = Crud<Candidato>.ReadById(id);
-        if (!res.Success || res.Data == null) return RedirectToAction("Elecciones");
+        var c = _crud.GetCandidato(id);
+        if (c == null) return RedirectToAction("Elecciones");
 
-        var c = res.Data;
-        var eleccionRes = Crud<Eleccion>.ReadById(c.EleccionId);
-        var eleccion = eleccionRes.Data;
-
+        var eleccion = _crud.GetEleccion(c.EleccionId);
+        
         var model = new CandidatoViewModel
         {
             Id = c.Id,
@@ -1081,11 +1084,9 @@ public class AdminController : Controller
             EleccionTitulo = eleccion?.Titulo
         };
 
-        if (eleccion != null && (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta))
+        if (eleccion != null)
         {
-             var listasRes = Crud<Lista>.ReadAll();
-             var listas = listasRes.Data?.Where(l => l.EleccionId == c.EleccionId).ToList() ?? new List<Lista>();
-             ViewBag.Listas = listas;
+             ViewBag.Listas = _crud.GetListasByEleccion(c.EleccionId);
              model.RequiereLista = true;
         }
 
@@ -1109,22 +1110,24 @@ public class AdminController : Controller
             ListaId = model.RequiereLista ? model.ListaId : null
         };
 
-        var result = Crud<Candidato>.Update(model.Id.ToString(), candidato);
-        if (result.Success)
+        try
         {
-             TempData["Success"] = "Candidato actualizado";
-             return RedirectToAction("Candidatos", new { eleccionId = model.EleccionId });
+            _crud.UpdateCandidato(candidato);
+            TempData["Success"] = "Candidato actualizado";
+            return RedirectToAction("Candidatos", new { eleccionId = model.EleccionId });
         }
-
-        model.ErrorMessage = result.Message;
-        return View(model);
+        catch (Exception ex)
+        {
+            model.ErrorMessage = ex.Message;
+            return View(model);
+        }
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult EliminarCandidato(int id, int eleccionId)
     {
-        Crud<Candidato>.Delete(id);
+        _crud.DeleteCandidato(id);
         return RedirectToAction("Candidatos", new { eleccionId });
     }
 

@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Nuevo Candidato";
     var elecciones = ViewBag.Elecciones as List<Eleccion>;
+    var listas = ViewBag.Listas as List<Lista>;
 }
 
 <div class="row justify-content-center">
@@ -73,23 +74,30 @@
                             <span asp-validation-for="Nombre" class="text-danger"></span>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="PartidoPolitico" class="form-label">Partido / Movimiento</label>
-                            <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido" />
-                            <span asp-validation-for="PartidoPolitico" class="text-danger"></span>
-                        </div>
+                        @if (Model.RequiereLista && listas != null && listas.Any())
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ListaId" class="form-label font-bold">Partido / Lista (Requerido)</label>
+                                <select asp-for="ListaId" class="form-select">
+                                    <option value="">-- Seleccione un Partido/Lista --</option>
+                                    @foreach (var lista in listas)
+                                    {
+                                        <option value="@lista.Id">@lista.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="ListaId" class="text-danger"></span>
+                                <small class="text-muted">El partido se asignará según la lista seleccionada.</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="PartidoPolitico" class="form-label">Partido / Movimiento</label>
+                                <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido" />
+                                <span asp-validation-for="PartidoPolitico" class="text-danger"></span>
+                            </div>
+                        }
                     </div>
-
-                    @if (Model.RequiereLista)
-                    {
-                        <div class="form-group mb-3 p-3 bg-base-200 rounded">
-                            <label asp-for="ListaId" class="form-label font-bold">Seleccione la Lista (Requerido)</label>
-                            <select asp-for="ListaId" class="form-select" asp-items="@(new SelectList(ViewBag.Listas, "Id", "Nombre"))">
-                                <option value="">-- Seleccione una Lista --</option>
-                            </select>
-                            <span asp-validation-for="ListaId" class="text-danger"></span>
-                        </div>
-                    }
 
                     <div class="mb-3">
                         <label asp-for="FotoUrl" class="form-label">Foto URL (Opcional)</label>
