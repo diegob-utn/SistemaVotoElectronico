@@ -326,8 +326,11 @@ public class LocalCrudService
             .ToHashSet();
     }
 
-    // ==================== ELECCION USUARIOS (FASE 10) ====================
+    // ==================== ELECCION USUARIOS (FASE 10) - DESACTIVADO TEMPORALMENTE ====================
+    // Se desactivó para resolver conflicto de modelo con Usuario legacy. 
+    // TODO: Migrar a Identity si se requiere esta funcionalidad.
 
+    /*
     /// <summary>
     /// Asigna un usuario a una elección privada. Retorna false si ya existe o cupo lleno.
     /// </summary>
@@ -373,6 +376,7 @@ public class LocalCrudService
         _context.SaveChanges();
         return true;
     }
+    */
 
     /// <summary>
     /// Verifica si un usuario tiene acceso a una elección (Pública o Asignado)
@@ -388,18 +392,19 @@ public class LocalCrudService
         // Si es generada, acceso total (validación se hace por login de usuario generado)
         if (eleccion.Acceso == TipoAcceso.Generada) return true;
 
-        // Si es privada, verificar tabla
-        return _context.EleccionUsuarios.Any(x => x.EleccionId == eleccionId && x.UsuarioId == usuarioId);
+        // Si es privada, verificar tabla - DESACTIVADO
+        // return _context.EleccionUsuarios.Any(x => x.EleccionId == eleccionId && x.UsuarioId == usuarioId);
+        return false; // Por defecto denegar si es privada y no hay tabla
     }
     
     /// <summary>
     /// Obtiene usuarios asignados
     /// </summary>
-    public List<EleccionUsuario> GetUsuariosAsignados(int eleccionId)
-    {
-        return _context.EleccionUsuarios
-            .Include(x => x.Usuario)
-            .Where(x => x.EleccionId == eleccionId)
-            .ToList();
-    }
+    // public List<EleccionUsuario> GetUsuariosAsignados(int eleccionId)
+    // {
+    //    return _context.EleccionUsuarios
+    //        .Include(x => x.Usuario)
+    //        .Where(x => x.EleccionId == eleccionId)
+    //        .ToList();
+    // }
 }

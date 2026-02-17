@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SistemaVoto.Data.Data;
-using SistemaVoto.Modelos;
+using SistemaVoto.Api.Dtos;
 
 namespace SistemaVoto.Api.Controllers
 {
@@ -9,75 +7,15 @@ namespace SistemaVoto.Api.Controllers
     [Route("api/roles")]
     public class RolesController : ControllerBase
     {
-        private readonly SistemaVotoDbContext _db;
-        public RolesController(SistemaVotoDbContext db) => _db = db;
+        // Controlador desactivado por migración a Identity
+        public RolesController()
+        {
+        }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public IActionResult Get()
         {
-            var roles = await _db.Roles.AsNoTracking().OrderBy(r => r.Id).ToListAsync();
-            return Ok(ApiResult<List<Rol>>.Ok(roles));
-        }
-
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var rol = await _db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
-            if (rol is null) return NotFound(ApiResult<object>.Fail("Rol no existe."));
-            return Ok(ApiResult<Rol>.Ok(rol));
-        }
-
-        // ✅ MODIFICADO: Agregados Descripcion y Activo (opcionales)
-        public record CrearRolRequest(string Nombre, string? Descripcion, bool? Activo);
-
-        [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] CrearRolRequest req)
-        {
-            if (string.IsNullOrWhiteSpace(req.Nombre))
-                return BadRequest(ApiResult<object>.Fail("Nombre de rol es requerido."));
-
-            var nombre = req.Nombre.Trim();
-            var exists = await _db.Roles.AnyAsync(r => r.Nombre == nombre);
-            if (exists) return Conflict(ApiResult<object>.Fail("Ya existe un rol con ese nombre."));
-
-            // ✅ MODIFICADO: Asignación de los nuevos campos
-            var rol = new Rol
-            {
-                Nombre = nombre,
-                Descripcion = req.Descripcion,
-                // Si no envían 'Activo', asumimos true por defecto
-                Activo = req.Activo ?? true
-            };
-
-            _db.Roles.Add(rol);
-            await _db.SaveChangesAsync();
-
-            return Ok(ApiResult<Rol>.Ok(rol, "Rol creado."));
-        }
-
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] CrearRolRequest req)
-        {
-            var rol = await _db.Roles.FindAsync(id);
-            if (rol == null) return NotFound(ApiResult<object>.Fail("Rol no existe."));
-            if (string.IsNullOrWhiteSpace(req.Nombre))
-                return BadRequest(ApiResult<object>.Fail("Nombre de rol es requerido."));
-
-            rol.Nombre = req.Nombre.Trim();
-            rol.Descripcion = req.Descripcion;
-            rol.Activo = req.Activo ?? true;
-            await _db.SaveChangesAsync();
-            return Ok(ApiResult<Rol>.Ok(rol, "Rol actualizado."));
-        }
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var rol = await _db.Roles.FindAsync(id);
-            if (rol == null) return NotFound(ApiResult<object>.Fail("Rol no existe."));
-            _db.Roles.Remove(rol);
-            await _db.SaveChangesAsync();
-            return Ok(ApiResult<object>.Ok(null, "Rol eliminado."));
+            return Ok("Controlador desactivado. Use Identity Roles.");
         }
     }
 }

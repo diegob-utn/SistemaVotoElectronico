@@ -1170,8 +1170,10 @@ public class AdminController : Controller
     }
 
     #endregion
-    // ==================== ASIGNACION DE USUARIOS (FASE 10) ====================
+    // ==================== ASIGNACION DE USUARIOS (FASE 10) - DESACTIVADO TEMPORALMENTE ====================
+    // Pendiente migración a Identity completo para manejo de elecciones privadas
 
+    /*
     [HttpGet]
     public async Task<IActionResult> AsignarUsuarios(int id)
     {
@@ -1186,20 +1188,22 @@ public class AdminController : Controller
 
         // Obtener todos los usuarios "Usuario"
         var users = await _userManager.GetUsersInRoleAsync("Usuario");
-        var asignados = _crud.GetUsuariosAsignados(id).Select(x => x.UsuarioId).ToHashSet();
+        // var asignados = _crud.GetUsuariosAsignados(id).Select(x => x.UsuarioId).ToHashSet();
 
         var model = new AsignarUsuariosViewModel
         {
             EleccionId = id,
             EleccionTitulo = eleccion.Titulo,
             CupoMaximo = eleccion.CupoMaximo,
-            UsuariosAsignadosCount = asignados.Count,
+            // UsuariosAsignadosCount = asignados.Count,
+            UsuariosAsignadosCount = 0,
             Usuarios = users.Select(u => new UsuarioAsignacionDto
             {
                 Id = u.Id,
                 Email = u.Email,
                 Nombre = u.UserName,
-                Asignado = asignados.Contains(u.Id)
+                // Asignado = asignados.Contains(u.Id)
+                Asignado = false
             }).ToList()
         };
 
@@ -1213,12 +1217,13 @@ public class AdminController : Controller
         {
             if (asignar)
             {
-                var success = _crud.AsignarUsuarioAEleccion(eleccionId, usuarioId);
-                if (!success) return Json(new { success = false, message = "Error: Cupo lleno o usuario no encontrado." });
+                // var success = _crud.AsignarUsuarioAEleccion(eleccionId, usuarioId);
+                // if (!success) return Json(new { success = false, message = "Error: Cupo lleno o usuario no encontrado." });
+                return Json(new { success = false, message = "Funcionalidad desactivada temporalmente." });
             }
             else
             {
-                _crud.RemoverUsuarioDeEleccion(eleccionId, usuarioId);
+                // _crud.RemoverUsuarioDeEleccion(eleccionId, usuarioId);
             }
             return Json(new { success = true });
         }
@@ -1227,6 +1232,7 @@ public class AdminController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
+    */
 
 }
 

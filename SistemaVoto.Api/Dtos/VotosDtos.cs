@@ -5,7 +5,7 @@ namespace SistemaVoto.Api.Dtos
     public class VotarRequest
     {
         [Required]
-        public int UsuarioId { get; set; }
+        public string UsuarioId { get; set; } = null!;
 
         // XOR: uno u otro
         public int? CandidatoId { get; set; }

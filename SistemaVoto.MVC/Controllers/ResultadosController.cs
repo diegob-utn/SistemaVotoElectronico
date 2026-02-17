@@ -110,9 +110,11 @@ public class ResultadosController : Controller
 
             // Determinar si usamos Votos de Listas o Candidatos
             // Plancha: Se usan listas
-            // Nominal: Se usan candidatos
+            // Nominal: No se calculan escaños proporcionales (regla de negocio: validar si es Nominal)
             // Mixta: Generalmente se asignan escanos por Lista primero (sistema proporcional)
-            if ((eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta) && listasConVotos.Any())
+            
+            // SOLO calcular si NO es Nominal y tiene escaños > 0
+            if (eleccion.Tipo != TipoEleccion.Nominal && (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta) && listasConVotos.Any())
             {
                 dataParaEscanos = listasConVotos.Select(l => (l.Nombre, l.Votos)).ToList();
             }

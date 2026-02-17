@@ -8,8 +8,6 @@ namespace SistemaVoto.Data.Data
   {
         public SistemaVotoDbContext(DbContextOptions<SistemaVotoDbContext> options) : base(options) { }
 
-        public DbSet<Usuario> Usuarios => Set<Usuario>();
-        public DbSet<Rol> Roles => Set<Rol>();
         public DbSet<Eleccion> Elecciones => Set<Eleccion>();
         public DbSet<Lista> Listas => Set<Lista>();
         public DbSet<Candidato> Candidatos => Set<Candidato>();
@@ -23,7 +21,6 @@ namespace SistemaVoto.Data.Data
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
         public DbSet<RecintoElectoral> Recintos => Set<RecintoElectoral>();
         public DbSet<EleccionUbicacion> EleccionUbicaciones => Set<EleccionUbicacion>();
-        public DbSet<EleccionUsuario> EleccionUsuarios => Set<EleccionUsuario>();
 
         protected override void OnModelCreating(ModelBuilder mb)
         {
@@ -32,14 +29,6 @@ namespace SistemaVoto.Data.Data
             // -------------------------
             // Unique
             // -------------------------
-            mb.Entity<Rol>()
-              .HasIndex(r => r.Nombre)
-              .IsUnique();
-
-            mb.Entity<Usuario>()
-              .HasIndex(u => u.Email)
-              .IsUnique();
-
             mb.Entity<HistorialVotacion>()
               .HasIndex(h => new { h.EleccionId, h.UsuarioId })
               .IsUnique();
@@ -135,24 +124,6 @@ namespace SistemaVoto.Data.Data
               .HasOne(x => x.Ubicacion)
               .WithMany()
               .HasForeignKey(x => x.UbicacionId)
-              .OnDelete(DeleteBehavior.Cascade);
-
-            // -------------------------
-            // Relacion Eleccion-Usuario (Asignacion Manual)
-            // -------------------------
-            mb.Entity<EleccionUsuario>()
-              .HasKey(eu => new { eu.EleccionId, eu.UsuarioId });
-
-            mb.Entity<EleccionUsuario>()
-              .HasOne(eu => eu.Eleccion)
-              .WithMany(e => e.UsuariosAsignados)
-              .HasForeignKey(eu => eu.EleccionId)
-              .OnDelete(DeleteBehavior.Cascade);
-
-            mb.Entity<EleccionUsuario>()
-              .HasOne(eu => eu.Usuario)
-              .WithMany()
-              .HasForeignKey(eu => eu.UsuarioId)
               .OnDelete(DeleteBehavior.Cascade);
 
             // -------------------------

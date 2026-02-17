@@ -52,7 +52,7 @@ namespace SistemaVoto.Modelos
         public TipoAcceso Acceso { get; set; } = TipoAcceso.Generada;
         public int CupoMaximo { get; set; } // 0 = Sin limite
         
-        public ICollection<EleccionUsuario> UsuariosAsignados { get; set; } = new List<EleccionUsuario>();
+        // public ICollection<EleccionUsuario> UsuariosAsignados { get; set; } = new List<EleccionUsuario>();
 
         public ICollection<Lista> Listas { get; set; } = new List<Lista>();
         public ICollection<Candidato> Candidatos { get; set; } = new List<Candidato>();

@@ -21,11 +21,11 @@ namespace SistemaVoto.Modelos
         [JsonIgnore]
         public Eleccion? Eleccion { get; set; }
 
-        public int UsuarioId { get; set; }
+        public string UsuarioId { get; set; } = null!;
 
         [ForeignKey(nameof(UsuarioId))]
         [JsonIgnore]
-        public Usuario? Usuario { get; set; }
+        public Microsoft.AspNetCore.Identity.IdentityUser? Usuario { get; set; }
 
         private DateTime _fechaParticipacionUtc = DateTime.UtcNow;
         public DateTime FechaParticipacionUtc 
