@@ -98,6 +98,7 @@
             
             <!-- D'Hondt Table -->
             <div class="tab-content active" id="dhondt-content">
+                <p class="text-sm text-muted mb-4">Método de Divisores Consecutivos (1, 2, 3...)</p>
                 <div class="escanos-grid">
                     @foreach (var item in Model.DistribucionDHondt)
                     {
@@ -112,6 +113,7 @@
             
             <!-- Webster Table -->
             <div class="tab-content" id="webster-content" style="display: none;">
+                <p class="text-sm text-muted mb-4">Método de Divisores Impares (1, 3, 5...)</p>
                 <div class="escanos-grid">
                     @if (Model.DistribucionWebster != null)
                     {
@@ -387,6 +389,7 @@
             @if (Model.Resultados != null)
             {
                 object listasData = Model.Resultados.Listas?.Select(l => new { 
+                        id = l.Id,
                         nombre = l.Nombre, 
                         votos = l.Votos, 
                         porcentaje = l.Porcentaje,
@@ -395,6 +398,7 @@
                 if (listasData == null) listasData = new List<object>();
 
                 object candidatosData = Model.Resultados.Candidatos?.Select(c => new { 
+                        id = c.Id,
                         nombre = c.Nombre, 
                         votos = c.Votos, 
                         porcentaje = c.Porcentaje,
@@ -415,20 +419,54 @@
                 var dataCandidatos = @Html.Raw(jsonCandidatos);
                 var tipoEleccion = '@Html.Raw(tipoEleccion)';
 
-                var palette = [
-                    getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-success').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-info').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-warning').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--color-purple').trim(),
-                    '#FF4560', '#775DD0', '#00E396', '#FEB019', '#FF66C3'
-                ];
-
-                // Assign colors consistently
-                dataListas.forEach((d, i) => { d.color = palette[i % palette.length]; });
+                // Generación dinámica de colores para asegurar unicidad
+                var totalEntities = dataListas.length + dataCandidatos.length;
                 
+                // Función para general colores visualmente distintos usando el Ángulo Áureo
+                function getDistinctColor(index) {
+                    var hue = (index * 137.508) % 360; 
+                    return `hsl(${hue}, 70%, 50%)`; 
+                }
+
+                // Formateador robusto para eliminar sufijo interno
+                function formatUniqueName(val) {
+                    if (val === null || val === undefined) return "";
+                    var str = String(val);
+                    if (str.indexOf('__ID__') > -1) {
+                        return str.split('__ID__')[0];
+                    }
+                    return str;
+                }
+
+                function makeNamesUnique(data) {
+                    // Usar ID para unicidad en lugar de contador
+                    data.forEach((d, idx) => {
+                        // Limpiar cualquier sufijo existente (por seguridad)
+                        var baseName = "";
+                        if(d.nombre && d.nombre.indexOf('__ID__') > -1) {
+                             baseName = d.nombre.split('__ID__')[0];
+                        } else {
+                             baseName = d.nombre || ("Item " + idx);
+                        }
+                        
+                        // Añadir ID como sufijo único (fallback a index si no hay ID)
+                        var uniqueId = (d.id !== undefined && d.id !== null) ? d.id : ("idx" + idx);
+                        d.nombre = baseName + "__ID__" + uniqueId;
+                    });
+                }
+
+                // Asignar colores a Listas
+                makeNamesUnique(dataListas);
+                dataListas.forEach((d, i) => { 
+                    d.color = getDistinctColor(i); 
+                });
+                
+                // Continuar la secuencia de colores para Candidatos
+                makeNamesUnique(dataCandidatos);
                 var globalIndex = dataListas.length; 
-                dataCandidatos.forEach((d, i) => { d.color = palette[(globalIndex + i) % palette.length]; });
+                dataCandidatos.forEach((d, i) => { 
+                    d.color = getDistinctColor(globalIndex + i); 
+                });
 
                 function renderChart(elementId, data, title) {
                     if (!data || data.length === 0) return;
@@ -453,11 +491,11 @@
                             bar: {
                                 horizontal: true,
                                 borderRadius: 6,
-                                distributed: true, // Distributed ensures each bar gets its own color from the colors array
+                                distributed: true, 
                                 dataLabels: { position: 'top' }
                             }
                         },
-                        colors: data.map(item => item.color), // Explicitly map assigned colors
+                        colors: data.map(item => item.color), 
                         dataLabels: {
                             enabled: true,
                             formatter: function(val) { return val.toLocaleString(); },
@@ -466,10 +504,30 @@
                         },
                         xaxis: {
                             categories: data.map(item => item.nombre),
-                            labels: { style: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() } }
+                            labels: { 
+                                style: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() },
+                                formatter: function(val) { return formatUniqueName(val); }
+                            }
                         },
                         yaxis: {
-                            labels: { style: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() } }
+                            labels: { 
+                                style: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() },
+                                formatter: function(val) { return formatUniqueName(val); }
+                            }
+                        },
+                        tooltip: {
+                            x: {
+                                formatter: function(val) { return formatUniqueName(val); }
+                            }
+                        },
+                        legend: {
+                            show: true,
+                            position: 'bottom',
+                            markers: { radius: 12 },
+                            itemMargin: { horizontal: 10, vertical: 5 },
+                            formatter: function(seriesName, opts) {
+                                return formatUniqueName(seriesName);
+                            }
                         },
                         grid: {
                             borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
@@ -508,11 +566,6 @@
                      renderChart("#chartCandidatos", dataCandidatos, "Votos por Candidato");
                 }
 
-                // Pie Chart - Combine if Mixta? Or just default to Listas which carry weights?
-                // For now, let's stick to the previous logic for Pie: Use Listas if available (Proportional view), else Candidatos.
-                // Or better: Allow user to switch? For now keeps it simple.
-                // NOTE: User showed Pie Chart with correct data.
-                
                 // Pie Chart Logic
                 var pieData = [];
                 if (tipoEleccion === 'Mixta') {
@@ -523,6 +576,7 @@
                      pieData = (dataListas.length > 0) ? dataListas : dataCandidatos;
                 }
 
+                // Pila de errores silenciosa
                 if (pieData && pieData.length > 0) {
                     var optionsPie = {
                         series: pieData.map(item => item.votos),
@@ -539,25 +593,88 @@
                                     size: '60%',
                                     labels: {
                                         show: true,
+                                        name: {
+                                            show: true,
+                                            formatter: function (val) {
+                                                return formatUniqueName(val);
+                                            }
+                                        },
+                                        value: {
+                                            show: true,
+                                            formatter: function (val) {
+                                                return parseInt(val);
+                                            }
+                                        },
                                         total: {
                                             show: true,
                                             label: 'Total',
-                                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
+                                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim(),
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => {
+                                                    return a + b
+                                                }, 0)
+                                            }
                                         }
                                     }
                                 }
                             }
                         },
+                        tooltip: {
+                            y: {
+                                formatter: undefined,
+                                title: {
+                                    formatter: (seriesName) => formatUniqueName(seriesName) + ":", 
+                                }
+                            }
+                        },
                         legend: {
                             position: 'bottom',
-                            labels: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() }
+                            labels: { colors: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
+                            formatter: function(seriesName, opts) {
+                                return formatUniqueName(seriesName) + " - " + opts.w.globals.series[opts.seriesIndex]; 
+                            }
                         },
-                         theme: {
+                        theme: {
                             mode: document.documentElement.getAttribute('data-theme') || 'light'
                         }
                     };
                     var chartPie = new ApexCharts(document.querySelector("#chartDistribucion"), optionsPie);
                     chartPie.render();
+                }
+
+                // ==========================================
+                //  SIGNALR - REALTIME UPDATES
+                // ==========================================
+                try {
+                    // Conectar al Hub en el puerto de la API (5049/7101)
+                    // Ajusta el puerto si tu API corre en otro
+                    var connection = new signalR.HubConnectionBuilder()
+                        .withUrl("https://localhost:7101/hubs/votacion") 
+                        .withAutomaticReconnect()
+                        .build();
+
+                    connection.on("ActualizacionResultados", function (id) {
+                        var currentEleccionId = @Model.Eleccion.Id;
+                        console.log("Evento recibido para eleccion: " + id);
+                        
+                        if (id == currentEleccionId) {
+                            // Recargar solo si es la eleccion actual
+                            location.reload(); 
+                        }
+                    });
+
+                    connection.start().then(function () {
+                        console.log("Conectado a SignalR Hub de Votación");
+                        // Unirse al grupo de esta eleccion
+                        connection.invoke("JoinGroup", @Model.Eleccion.Id).catch(function (err) {
+                            return console.error(err.toString());
+                        });
+                    }).catch(function (err) {
+                        console.error("Error al conectar SignalR: " + err.toString());
+                    });
+
+                } catch (e) {
+                    console.error("Error inicializando SignalR", e);
                 }
                 </text>
 
