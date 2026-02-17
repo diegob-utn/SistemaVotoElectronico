@@ -85,43 +85,114 @@ public class CalculoEscanosService
     }
 
     /// <summary>
-    /// Genera la tabla detallada del proceso D'Hondt
+    /// Calcula el detalle completo de asignacion D'Hondt incluyendo tabla de cocientes
     /// </summary>
-    public List<TablaDistribucionRow> GenerarTablaDHondt(
-        List<(string Nombre, int Votos)> votos, 
-        int escanos)
+    public DetalleAsignacion CalcularDetalleDHondt(List<(string Nombre, int Votos)> votos, int escanos)
     {
-        var tabla = new List<TablaDistribucionRow>();
-        
+        return CalcularDetalleGenerico(votos, escanos, "D'Hondt", i => i + 1);
+    }
+
+    /// <summary>
+    /// Calcula el detalle completo de asignacion Webster incluyendo tabla de cocientes
+    /// </summary>
+    public DetalleAsignacion CalcularDetalleWebster(List<(string Nombre, int Votos)> votos, int escanos)
+    {
+        return CalcularDetalleGenerico(votos, escanos, "Webster", i => 2 * i + 1);
+    }
+
+    private DetalleAsignacion CalcularDetalleGenerico(
+        List<(string Nombre, int Votos)> votos, 
+        int escanos, 
+        string nombreMetodo,
+        Func<int, double> divisorFunc)
+    {
+        var detalle = new DetalleAsignacion
+        {
+            Metodo = nombreMetodo,
+            EscanosTotales = escanos
+        };
+
+        if (votos == null || !votos.Any() || escanos <= 0)
+            return detalle;
+
+        // 1. Generar todos los cocientes posibles
+        var todosCocientes = new List<Cociente>();
+
         foreach (var (nombre, votosPartido) in votos)
         {
-            var row = new TablaDistribucionRow
-            {
-                Nombre = nombre,
-                VotosTotales = votosPartido,
-                Divisores = new List<double>()
-            };
+            var fila = new FilaAsignacion { Partido = nombre, Votos = votosPartido };
             
-            // Calcular cocientes para cada divisor (1, 2, 3, ..., escanos)
-            for (int d = 1; d <= escanos; d++)
+            // Generamos cocientes hasta el numero de escanos (garantiza suficiencia)
+            // O al menos un numero razonable para mostrar en tabla
+            for (int i = 0; i < escanos; i++)
             {
-                row.Divisores.Add((double)votosPartido / d);
+                double divisor = divisorFunc(i);
+                double valor = votosPartido / divisor;
+                
+                var cociente = new Cociente
+                {
+                    Partido = nombre,
+                    VotosBase = votosPartido,
+                    Divisor = divisor,
+                    Valor = valor
+                };
+                
+                fila.ColCocientes.Add(cociente);
+                todosCocientes.Add(cociente);
             }
-            
-            tabla.Add(row);
+            detalle.Filas.Add(fila);
         }
+
+        // 2. Ordenar cocientes descendente y tomar los N ganadores
+        // Regla de desempate: Mayor voto total (implícito si el sort es estable, o forzarlo)
+        var cocientesGanadores = todosCocientes
+            .OrderByDescending(c => c.Valor)
+            .ThenByDescending(c => c.VotosBase) // Desempate por votos totales
+            .Take(escanos)
+            .ToList();
+
+        // 3. Marcar ganadores y asignar orden
+        for (int i = 0; i < cocientesGanadores.Count; i++)
+        {
+            cocientesGanadores[i].EsGanador = true;
+            cocientesGanadores[i].OrdenAsignacion = i + 1;
+            
+            // Actualizar conteo en fila
+            var fila = detalle.Filas.First(f => f.Partido == cocientesGanadores[i].Partido);
+            fila.EscanosTotales++;
+        }
+
+        detalle.CocientesGanadores = cocientesGanadores;
         
-        return tabla;
+        // Ordenar filas por votos totales descendente para visualizacion
+        detalle.Filas = detalle.Filas.OrderByDescending(f => f.Votos).ToList();
+
+        return detalle;
     }
 }
 
-/// <summary>
-/// Fila para la tabla de distribucion de escanos
-/// </summary>
-public class TablaDistribucionRow
+public class DetalleAsignacion
 {
-    public string Nombre { get; set; } = null!;
-    public int VotosTotales { get; set; }
-    public List<double> Divisores { get; set; } = new();
-    public int EscanosAsignados { get; set; }
+    public string Metodo { get; set; } = null!;
+    public int EscanosTotales { get; set; }
+    public List<FilaAsignacion> Filas { get; set; } = new();
+    public List<Cociente> CocientesGanadores { get; set; } = new();
+}
+
+public class FilaAsignacion
+{
+    public string Partido { get; set; } = null!;
+    public int Votos { get; set; }
+    public List<Cociente> ColCocientes { get; set; } = new();
+    public int EscanosTotales { get; set; }
+}
+
+public class Cociente
+{
+    public string Partido { get; set; } = null!;
+    public int VotosBase { get; set; }
+    public double Valor { get; set; }
+    public double Divisor { get; set; }
+    public bool EsGanador { get; set; }
+    public int OrdenAsignacion { get; set; }
 }

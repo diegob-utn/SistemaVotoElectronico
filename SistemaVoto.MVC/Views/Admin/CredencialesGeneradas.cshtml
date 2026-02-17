@@ -44,7 +44,10 @@
             </table>
         </div>
 
-        <div class="mt-4 text-center">
+        <div class="mt-4 text-center d-flex justify-content-center gap-2">
+            <button onclick="exportarCSV()" class="btn btn-outline-success">
+                <i data-lucide="download" style="width: 18px; height: 18px; vertical-align: bottom;"></i> Descargar CSV
+            </button>
             <a href="@Url.Action("Elecciones")" class="btn btn-primary">finalizar</a>
         </div>
     </div>
@@ -66,6 +69,27 @@
                     lucide.createIcons();
                 }, 1000);
             });
+        }
+
+        function exportarCSV() {
+            var csv = ["Usuario,Contraseña"];
+            var rows = document.querySelectorAll("table tbody tr");
+            
+            rows.forEach(function(row) {
+                var cols = row.querySelectorAll("td");
+                var user = cols[0].innerText.trim();
+                var pass = cols[1].innerText.trim();
+                csv.push(`${user},${pass}`);
+            });
+
+            var csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+            var downloadLink = document.createElement("a");
+            downloadLink.download = "credenciales_eleccion_@(Model.EleccionId).csv";
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
         }
     </script>
 }

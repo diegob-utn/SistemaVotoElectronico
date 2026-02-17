@@ -209,8 +209,8 @@
             // Datos para los graficos (en produccion vendrian de la API)
             var eleccionesData = {
                 activas: @Model.EleccionesActivas,
-                pendientes: @(Model.TotalElecciones - Model.EleccionesActivas),
-                finalizadas: 0
+                pendientes: @Model.EleccionesPendientes,
+                finalizadas: @Model.EleccionesCerradas
             };
             
             // Grafico de estado de elecciones (Donut)

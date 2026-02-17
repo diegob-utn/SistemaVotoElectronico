@@ -46,9 +46,32 @@ public class ElectionManagerService
         
         for (int i = 0; i < quantity; i++)
         {
-            var password = GenerateRobustPassword();
-            var email = $"votante_{eleccionId}_{i + 1}@sistema.local";
+            // Generar credenciales deterministas: Votante{eleccionId}@{i+1} / Voto#{eleccionId}_{i+1}!
+            // Formato de usuario: votante_{eleccionId}_{i+1}@sistema.local
+            // Formato de password: Voto#{eleccionId}_{i+1}! (Cumple mayuscula, minuscula, numero y especial)
             
+            var index = i + 1;
+            var email = $"votante_{eleccionId}_{index}@sistema.local";
+            var password = $"Voto#{eleccionId}_{index}!"; 
+            
+            // Verificar si el usuario ya existe para no fallar (idempotencia basica)
+            var existingUser = await _userManager.FindByEmailAsync(email);
+            if (existingUser != null)
+            {
+                // Si existe, reseteamos el password para asegurar que sea el esperado
+                var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
+                var resetResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
+                if (resetResult.Succeeded)
+                {
+                    credenciales.Add(new UsuarioCredencial { Username = email, Password = password });
+                }
+                else
+                {
+                    _logger.LogWarning($"Fallo al resetear password usuario existente {email}: {string.Join(", ", resetResult.Errors.Select(e => e.Description))}");
+                }
+                continue;
+            }
+
             var user = new IdentityUser 
             { 
                 UserName = email, 
@@ -69,32 +92,6 @@ public class ElectionManagerService
         }
         return credenciales;
     }
-
-    private string GenerateRobustPassword()
-    {
-        // Generar contraseña que cumpla políticas de Identity
-        // Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 dígito, 1 especial
-        var random = new Random();
-        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const string lower = "abcdefghijklmnopqrstuvwxyz";
-        const string digits = "0123456789";
-        const string special = "!@#$%&*";
-        
-        // Garantizar al menos uno de cada tipo
-        var password = new char[10];
-        password[0] = upper[random.Next(upper.Length)];
-        password[1] = lower[random.Next(lower.Length)];
-        password[2] = digits[random.Next(digits.Length)];
-        password[3] = special[random.Next(special.Length)];
-        
-        // Llenar el resto con caracteres aleatorios de todos los tipos
-        var allChars = upper + lower + digits + special;
-        for (int i = 4; i < password.Length; i++)
-        {
-            password[i] = allChars[random.Next(allChars.Length)];
-        }
-        
-        // Mezclar
-        return new string(password.OrderBy(_ => random.Next()).ToArray());
-    }
+    
+    // Removed GenerateRobustPassword as it is no longer used.
 }

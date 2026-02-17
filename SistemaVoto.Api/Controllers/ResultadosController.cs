@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SistemaVoto.Api.Services;
 using SistemaVoto.Data.Data;
 using SistemaVoto.Modelos;
+using SistemaVoto.Modelos.Engine;
 
 namespace SistemaVoto.Api.Controllers
 {
@@ -12,12 +12,10 @@ namespace SistemaVoto.Api.Controllers
     public class ResultadosController : ControllerBase
     {
         private readonly SistemaVotoDbContext _db;
-        private readonly SeatAllocationService _seats;
 
-        public ResultadosController(SistemaVotoDbContext db, SeatAllocationService seats)
+        public ResultadosController(SistemaVotoDbContext db)
         {
             _db = db;
-            _seats = seats;
         }
 
         public record ConteoDto(
@@ -74,11 +72,61 @@ namespace SistemaVoto.Api.Controllers
                 var porcentajes = votos.Select(v => total == 0 ? 0 : Math.Round(v * 100.0 / total, 2)).ToArray();
 
                 var votosDict = items.ToDictionary(x => x.Id, x => x.Votos);
-                var dh = _seats.AsignarEscanos(votosDict, eleccion.NumEscanos, MetodoEscanos.Dhondt);
-                var wb = _seats.AsignarEscanos(votosDict, eleccion.NumEscanos, MetodoEscanos.Webster);
+                
+                // --- ELECTION ENGINE ---
+                int escanosNominales = eleccion.EscanosNominales;
+                int escanosLista = eleccion.EscanosLista;
 
-                var escDh = items.Select(x => dh[x.Id]).ToArray();
-                var escWb = items.Select(x => wb[x.Id]).ToArray();
+                if (eleccion.Tipo == TipoEleccion.Mixta && escanosNominales == 0 && escanosLista == 0)
+                {
+                    escanosLista = (int)Math.Ceiling(eleccion.NumEscanos * 0.6); 
+                    escanosNominales = eleccion.NumEscanos - escanosLista;
+                }
+                else if (eleccion.Tipo == TipoEleccion.Plancha && escanosLista == 0)
+                {
+                   escanosLista = eleccion.NumEscanos;
+                }
+                
+                // Preparar input para Engine
+                // Nota: Api actual solo procesa listas en el bloque else.
+                var engineListas = items.Select(x => new EngineLista 
+                { 
+                    Id = x.Id.ToString(), 
+                    Nombre = nombres.GetValueOrDefault(x.Id, $"Lista {x.Id}"),
+                    Votos = x.Votos 
+                }).ToList();
+
+                var inputDH = new EngineInput
+                {
+                    Tipo = eleccion.Tipo == TipoEleccion.Mixta ? EngineTipoEleccion.Mixta : EngineTipoEleccion.Plancha,
+                    Metodo = EngineMetodo.DHondt,
+                    EscanosTotales = eleccion.NumEscanos,
+                    EscanosNominales = escanosNominales,
+                    EscanosLista = escanosLista,
+                    Listas = engineListas
+                };
+
+                var inputWB = new EngineInput
+                {
+                    Tipo = eleccion.Tipo == TipoEleccion.Mixta ? EngineTipoEleccion.Mixta : EngineTipoEleccion.Plancha,
+                    Metodo = EngineMetodo.Webster,
+                    EscanosTotales = eleccion.NumEscanos,
+                    EscanosNominales = escanosNominales,
+                    EscanosLista = escanosLista,
+                    Listas = engineListas
+                };
+
+                var resDH = ElectionEngine.Run(inputDH);
+                var resWB = ElectionEngine.Run(inputWB);
+
+                // Mapear resultados de vuelta a los arrays
+                // Necesitamos saber cuantos escanos gano cada lista ID
+                var dictDH = resDH.DistribucionProporcional.ToDictionary(d => d.Partido, d => d.Escanos);
+                var dictWB = resWB.DistribucionProporcional.ToDictionary(d => d.Partido, d => d.Escanos);
+
+                // items tiene el orden original
+                var escDh = items.Select(x => dictDH.GetValueOrDefault(nombres.GetValueOrDefault(x.Id, $"Lista {x.Id}"), 0)).ToArray();
+                var escWb = items.Select(x => dictWB.GetValueOrDefault(nombres.GetValueOrDefault(x.Id, $"Lista {x.Id}"), 0)).ToArray();
 
                 return new ConteoDto(categorias, votos, porcentajes, escDh, escWb, total);
             }

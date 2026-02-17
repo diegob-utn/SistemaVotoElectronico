@@ -60,9 +60,11 @@ public class AdminController : Controller
         {
             TotalElecciones = elecciones.Count,
             EleccionesActivas = elecciones.Count(e => e.Estado == EstadoEleccion.Activa),
+            EleccionesPendientes = elecciones.Count(e => e.Estado == EstadoEleccion.Pendiente),
+            EleccionesCerradas = elecciones.Count(e => e.Estado == EstadoEleccion.Cerrada),
             TotalUsuarios = _userManager.Users.Count(),
             TotalVotos = votos.Count,
-            Elecciones = elecciones,
+            Elecciones = elecciones.OrderByDescending(e => e.FechaInicioUtc).Take(5).ToList(),
             ParticipacionData = data,
             ParticipacionLabels = labels
         };
@@ -1241,6 +1243,8 @@ public class DashboardViewModel
 {
     public int TotalElecciones { get; set; }
     public int EleccionesActivas { get; set; }
+    public int EleccionesPendientes { get; set; }
+    public int EleccionesCerradas { get; set; }
     public int TotalUsuarios { get; set; }
     public int TotalVotos { get; set; }
     public List<SistemaVoto.Modelos.Eleccion> Elecciones { get; set; } = new();

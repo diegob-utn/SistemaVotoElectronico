@@ -43,6 +43,8 @@ namespace SistemaVoto.Modelos
 
         public TipoEleccion Tipo { get; set; }     // 0 Nominal, 1 Plancha
         public int NumEscanos { get; set; }        // 0 si Nominal, >0 si Plancha
+        public int EscanosNominales { get; set; }  // Para Mixta
+        public int EscanosLista { get; set; }      // Para Mixta/Plancha
         public EstadoEleccion Estado { get; set; } = EstadoEleccion.Pendiente;
 
         public bool UsaUbicacion { get; set; } = false;

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SistemaVoto.Modelos;
+using SistemaVoto.Modelos.Engine;
 using SistemaVoto.MVC.Services;
 using SistemaVoto.MVC.ViewModels;
 
@@ -11,12 +12,10 @@ namespace SistemaVoto.MVC.Controllers;
 public class ResultadosController : Controller
 {
     private readonly LocalCrudService _crud;
-    private readonly CalculoEscanosService _calculoEscanos;
 
-    public ResultadosController(LocalCrudService crud, CalculoEscanosService calculoEscanos)
+    public ResultadosController(LocalCrudService crud)
     {
         _crud = crud;
-        _calculoEscanos = calculoEscanos;
     }
 
     /// <summary>
@@ -27,6 +26,7 @@ public class ResultadosController : Controller
     /// </summary>
     [HttpGet]
     [Route("Resultados/{id}")]
+    [HttpGet]
     [Route("Resultados/Index/{id}")]
     public IActionResult Index(int id)
     {
@@ -38,19 +38,13 @@ public class ResultadosController : Controller
             return RedirectToAction("Elecciones", "Admin");
         }
 
-        // Obtener candidatos de esta eleccion
+        // Obtener datos crudos
         var candidatos = _crud.GetCandidatosByEleccion(id);
-        
-        // Obtener votos
         var votos = _crud.GetVotosByEleccion(id);
-        
-        // Obtener listas
         var listas = _crud.GetListasByEleccion(id);
-
-        // Construir resultados
         var totalVotos = votos.Count;
-        
-        // Resultados Candidatos
+
+        // --- PREPARAR DATOS PARA EL VIEWMODEL LEGACY (Para mantener views existentes si se requiere) ---
         var candidatosConVotos = candidatos.Select(c => new CandidatoResultadoDto
         {
             Id = c.Id,
@@ -60,7 +54,6 @@ public class ResultadosController : Controller
             Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.CandidatoId == c.Id) / totalVotos * 100 : 0
         }).OrderByDescending(c => c.Votos).ToList();
 
-        // Resultados Listas (Para Plancha/Mixta)
         var listasConVotos = listas.Select(l => new ListaResultadoDto
         {
             Id = l.Id,
@@ -69,73 +62,159 @@ public class ResultadosController : Controller
             Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.ListaId == l.Id) / totalVotos * 100 : 0
         }).OrderByDescending(l => l.Votos).ToList();
 
-        // Si es Plancha, y no hay votos directos a candidatos, pero si a listas,
-        // atribuimos visualmente los votos de la lista a sus candidatos para que no se vea vacío 
-        // OJO: Esto es solo para visualización si se desea, por ahora mantenemos separado.
-        // Pero si la elección es Plancha, el grafico principal debería ser de Listas.
-
-        var eleccionDto = new EleccionDto
-        {
-            Id = eleccion.Id,
-            Titulo = eleccion.Titulo,
-            Descripcion = eleccion.Descripcion,
-            Tipo = eleccion.Tipo.ToString(),
-            NumEscanos = eleccion.NumEscanos,
-            Estado = eleccion.Estado.ToString(),
-            FechaInicioUtc = eleccion.FechaInicioUtc,
-            FechaFinUtc = eleccion.FechaFinUtc,
-            TotalVotos = totalVotos,
-            TotalCandidatos = candidatos.Count
-        };
-
         var model = new ResultadosViewModel
         {
-            Eleccion = eleccionDto,
-            Resultados = new ResultadosDto
+            Eleccion = new EleccionDto 
             {
-                EleccionId = eleccion.Id,
+                Id = eleccion.Id,
                 Titulo = eleccion.Titulo,
                 Tipo = eleccion.Tipo.ToString(),
                 NumEscanos = eleccion.NumEscanos,
-                TotalVotos = totalVotos,
+                Estado = eleccion.Estado.ToString(),
+                TotalVotos = totalVotos
+            },
+            Resultados = new ResultadosDto
+            {
                 Candidatos = candidatosConVotos,
-                Listas = listasConVotos
+                Listas = listasConVotos,
+                TotalVotos = totalVotos
             }
         };
 
-        // Si hay escanos y resultados, calcular distribucion
+        // --- ELECTION ENGINE INTEGRATION ---
         if (eleccion.NumEscanos > 0)
         {
-            List<(string Nombre, int Votos)> dataParaEscanos = new();
+            // 1. Obtener división de escaños desde BD (con fallback para datos legacy)
+            int escanosNominales = eleccion.EscanosNominales;
+            int escanosLista = eleccion.EscanosLista;
 
-            // Determinar si usamos Votos de Listas o Candidatos
-            // Plancha: Se usan listas
-            // Nominal: No se calculan escaños proporcionales (regla de negocio: validar si es Nominal)
-            // Mixta: Generalmente se asignan escanos por Lista primero (sistema proporcional)
-            
-            // SOLO calcular si NO es Nominal y tiene escaños > 0
-            if (eleccion.Tipo != TipoEleccion.Nominal && (eleccion.Tipo == TipoEleccion.Plancha || eleccion.Tipo == TipoEleccion.Mixta) && listasConVotos.Any())
+            // Logica de Fallback si no esta definido en BD pero deberia
+            if (eleccion.Tipo == TipoEleccion.Mixta && escanosNominales == 0 && escanosLista == 0)
             {
-                dataParaEscanos = listasConVotos.Select(l => (l.Nombre, l.Votos)).ToList();
+                escanosLista = (int)Math.Ceiling(eleccion.NumEscanos * 0.6); 
+                escanosNominales = eleccion.NumEscanos - escanosLista;
             }
-            else if (candidatosConVotos.Any())
+            else if (eleccion.Tipo == TipoEleccion.Plancha && escanosLista == 0)
             {
-                dataParaEscanos = candidatosConVotos.Select(c => (c.Nombre, c.Votos)).ToList();
+                escanosLista = eleccion.NumEscanos;
+            }
+            // Para nominal, asumimos todo nominal si no se especifica
+            if (eleccion.Tipo == TipoEleccion.Nominal && escanosNominales == 0)
+            {
+                escanosNominales = eleccion.NumEscanos;
             }
 
-            if (dataParaEscanos.Any(x => x.Votos > 0)) // Solo calcular si hay votos
+            // 2. Construir Input para Engine
+            var engineListas = listas.Select(l => new EngineLista
             {
-                model.DistribucionDHondt = _calculoEscanos.CalcularDHondt(
-                    dataParaEscanos, 
-                    eleccion.NumEscanos);
+                Id = l.Id.ToString(),
+                Nombre = l.Nombre,
+                Votos = votos.Count(v => v.ListaId == l.Id),
+                // Asumimos que los candidatos están linkeados a la lista en BD
+                Candidatos = _crud.GetCandidatosByEleccion(id)
+                    .Where(c => c.ListaId == l.Id) // Asumiendo relación
+                    .Select(c => new EngineCandidato { Nombre = c.Nombre, Partido = l.Nombre })
+                    .ToList()
+            }).ToList();
+
+            // Candidatos nominales (todos los de la elección que reciben votos directos)
+            var engineCandidatos = candidatos.Select(c => new EngineCandidato
+            {
+                Id = c.Id.ToString(),
+                Nombre = c.Nombre,
+                Partido = c.PartidoPolitico ?? "Independiente",
+                Votos = votos.Count(v => v.CandidatoId == c.Id)
+            }).ToList();
+
+            var inputDHondt = new EngineInput
+            {
+                Tipo = MapTipo(eleccion.Tipo),
+                Metodo = EngineMetodo.DHondt,
+                EscanosTotales = eleccion.NumEscanos,
+                EscanosNominales = escanosNominales,
+                EscanosLista = escanosLista,
+                Listas = engineListas,
+                CandidatosNominales = engineCandidatos
+            };
+
+            var inputWebster = new EngineInput
+            {
+                Tipo = MapTipo(eleccion.Tipo),
+                Metodo = EngineMetodo.Webster,
+                EscanosTotales = eleccion.NumEscanos,
+                EscanosNominales = escanosNominales, // Misma división
+                EscanosLista = escanosLista,
+                Listas = engineListas,
+                CandidatosNominales = engineCandidatos
+            };
+
+            // 3. Ejecutar Engine si hay datos
+            if (votos.Any())
+            {
+                // D'Hondt
+                var resultDHondt = ElectionEngine.Run(inputDHondt);
                 
-                model.DistribucionWebster = _calculoEscanos.CalcularWebster(
-                    dataParaEscanos, 
-                    eleccion.NumEscanos);
+                // Mapear resultado engine a ViewModel
+                model.DistribucionDHondt = resultDHondt.DistribucionProporcional
+                    .Select(x => (x.Partido, x.Escanos)).ToList();
+                
+                // Mapear Detalle (convertir tipos del Engine a tipos del ViewModel existentes o nuevos)
+                // Usaremos un adaptador simple aquí para reutilizar clases existentes si es posible, o mapear.
+                model.DetalleDHondt = MapDetalle(resultDHondt.DetalleProporcional, escanosLista);
+
+                // Webster
+                var resultWebster = ElectionEngine.Run(inputWebster);
+                model.DistribucionWebster = resultWebster.DistribucionProporcional
+                    .Select(x => (x.Partido, x.Escanos)).ToList();
+                    
+                model.DetalleWebster = MapDetalle(resultWebster.DetalleProporcional, escanosLista);
             }
         }
 
         return View(model);
+    }
+
+    private EngineTipoEleccion MapTipo(TipoEleccion tipo)
+    {
+        return tipo switch
+        {
+            TipoEleccion.Nominal => EngineTipoEleccion.Nominal,
+            TipoEleccion.Plancha => EngineTipoEleccion.Plancha,
+            TipoEleccion.Mixta => EngineTipoEleccion.Mixta,
+            _ => EngineTipoEleccion.Plancha
+        };
+    }
+
+    private DetalleAsignacion? MapDetalle(EngineDetalleCalculo? engineDetalle, int escanos)
+    {
+        if (engineDetalle == null) return null;
+
+        return new DetalleAsignacion
+        {
+            Metodo = engineDetalle.Metodo,
+            EscanosTotales = escanos,
+            Filas = engineDetalle.Filas.Select(f => new FilaAsignacion
+            {
+               Partido = f.Partido,
+               Votos = f.Votos,
+               EscanosTotales = f.EscanosGanados,
+               ColCocientes = f.Cocientes.Select(c => new Cociente
+               {
+                   Partido = c.Partido,
+                   Valor = c.Valor,
+                   Divisor = c.Divisor,
+                   EsGanador = c.EsGanador,
+                   OrdenAsignacion = c.OrdenAsignacion
+               }).ToList()
+            }).ToList(),
+            CocientesGanadores = engineDetalle.CocientesGanadores.Select(c => new Cociente
+            {
+                Partido = c.Partido,
+                Valor = c.Valor,
+                OrdenAsignacion = c.OrdenAsignacion,
+                EsGanador = true
+            }).ToList()
+        };
     }
 
     /// <summary>
@@ -236,4 +315,8 @@ public class ResultadosViewModel
     public ResultadosDto? Resultados { get; set; }
     public List<(string Nombre, int Escanos)>? DistribucionDHondt { get; set; }
     public List<(string Nombre, int Escanos)>? DistribucionWebster { get; set; }
+    
+    // Detalle detallado
+    public DetalleAsignacion? DetalleDHondt { get; set; }
+    public DetalleAsignacion? DetalleWebster { get; set; }
 }

@@ -1,3 +1,5 @@
+@using SistemaVoto.MVC.Services
+@using SistemaVoto.MVC.Controllers
 @model ResultadosViewModel
 @{
     ViewData["Title"] = "Resultados - " + Model.Eleccion.Titulo;
@@ -87,44 +89,192 @@
         <div class="escanos-section">
             <h2 class="section-title">
                 <i data-lucide="armchair" style="width: 24px; height: 24px;"></i>
-                Distribucion de Escanos
+                Distribución de Escaños (Proyección)
             </h2>
             
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" data-tab="dhondt" onclick="switchTab('dhondt')">Metodo D'Hondt</button>
-                <button class="tab" data-tab="webster" onclick="switchTab('webster')">Metodo Webster</button>
-            </div>
-            
-            <!-- D'Hondt Table -->
-            <div class="tab-content active" id="dhondt-content">
-                <p class="text-sm text-muted mb-4">Método de Divisores Consecutivos (1, 2, 3...)</p>
-                <div class="escanos-grid">
-                    @foreach (var item in Model.DistribucionDHondt)
+            <div class="escanos-comparison-grid">
+                <!-- Columna D'Hondt -->
+                <div class="metodo-card">
+                    <div class="metodo-header">
+                        <h3>Método D'Hondt</h3>
+                        <div class="metodo-badge favorable-grandes">Favorece mayorías</div>
+                    </div>
+                    
+                    <div class="metodo-info glass-panel">
+                        <p><strong>Fórmula:</strong> División sucesiva (1, 2, 3...)</p>
+                        <p class="text-xs text-muted">Tiende a favorecer a partidos grandes; reduce la fragmentación parlamentaria.</p>
+                    </div>
+
+                    <!-- Resumen Escaños -->
+                    <div class="escanos-grid">
+                        @if (Model.DetalleDHondt != null)
+                        {
+                            @foreach (var fila in Model.DetalleDHondt.Filas.OrderByDescending(f => f.EscanosTotales))
+                            {
+                                <div class="escano-card glass-card @(fila.EscanosTotales > 0 ? "ganador" : "sin-escanos")">
+                                    <div class="escano-value">@fila.EscanosTotales</div>
+                                    <div class="escano-label">@fila.Partido</div>
+                                    <div class="escano-bar" style="width: @(Model.Eleccion.NumEscanos > 0 ? fila.EscanosTotales * 100.0 / Model.Eleccion.NumEscanos : 0)%"></div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                           <!-- Fallback legacy if details missing (should not happen) -->
+                            @foreach (var item in Model.DistribucionDHondt)
+                            {
+                                <div class="escano-card glass-card">
+                                    <div class="escano-value">@item.Escanos</div>
+                                    <div class="escano-label">@item.Nombre</div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Detalle Calculo (Tabla) -->
+                    @if (Model.DetalleDHondt != null && Model.DetalleDHondt.Filas.Any())
                     {
-                        <div class="escano-card glass-card">
-                            <div class="escano-value">@item.Escanos</div>
-                            <div class="escano-label">@item.Nombre</div>
-                            <div class="escano-bar" style="width: @(item.Escanos * 100.0 / Model.Eleccion.NumEscanos)%"></div>
+                        <div class="detalle-calculo mt-4">
+                            <h4 class="text-sm font-bold mb-2 text-muted">Tabla de Cocientes</h4>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-xs">
+                                    <thead>
+                                        <tr>
+                                            <th>Partido</th>
+                                            <th>Votos</th>
+                                            @for (int i = 0; i < Math.Min(5, Model.Eleccion.NumEscanos); i++)
+                                            {
+                                                <th>/@(i + 1)</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var fila in Model.DetalleDHondt.Filas)
+                                        {
+                                            <tr>
+                                                <td class="font-bold">@fila.Partido</td>
+                                                <td>@fila.Votos.ToString("N0")</td>
+                                                @for (int i = 0; i < Math.Min(5, fila.ColCocientes.Count); i++)
+                                                {
+                                                    var c = fila.ColCocientes[i];
+                                                    <td class="@(c.EsGanador ? "bg-accent-low text-accent font-bold" : "")" title="Orden: @(c.EsGanador ? c.OrdenAsignacion : "-")">
+                                                        @c.Valor.ToString("N0")
+                                                        @if(c.EsGanador) { <span class="badge-orden">#@c.OrdenAsignacion</span> }
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Lista Ordenada -->
+                            <div class="mt-3">
+                                <h4 class="text-sm font-bold mb-2 text-muted">Orden de Asignación</h4>
+                                <div class="orden-asignacion-list">
+                                    @foreach (var c in Model.DetalleDHondt.CocientesGanadores.OrderBy(x => x.OrdenAsignacion))
+                                    {
+                                        <div class="orden-item">
+                                            <span class="orden-num">#@c.OrdenAsignacion</span>
+                                            <span class="orden-partido">@c.Partido</span>
+                                            <span class="orden-valor">(@c.Valor.ToString("N0"))</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
                         </div>
                     }
                 </div>
-            </div>
-            
-            <!-- Webster Table -->
-            <div class="tab-content" id="webster-content" style="display: none;">
-                <p class="text-sm text-muted mb-4">Método de Divisores Impares (1, 3, 5...)</p>
-                <div class="escanos-grid">
-                    @if (Model.DistribucionWebster != null)
-                    {
-                        @foreach (var item in Model.DistribucionWebster)
+                
+                <!-- Columna Webster -->
+                <div class="metodo-card">
+                    <div class="metodo-header">
+                        <h3>Método Webster</h3>
+                        <div class="metodo-badge favorable-proporcional">Más proporcional</div>
+                    </div>
+                    
+                    <div class="metodo-info glass-panel">
+                        <p><strong>Fórmula:</strong> Divisores impares (1, 3, 5...)</p>
+                        <p class="text-xs text-muted">Beneficia a partidos medianos/pequeños; reduce la sobrerrepresentación.</p>
+                    </div>
+
+                    <!-- Resumen Escaños -->
+                    <div class="escanos-grid">
+                        @if (Model.DetalleWebster != null)
                         {
-                            <div class="escano-card glass-card">
-                                <div class="escano-value">@item.Escanos</div>
-                                <div class="escano-label">@item.Nombre</div>
-                                <div class="escano-bar" style="width: @(item.Escanos * 100.0 / Model.Eleccion.NumEscanos)%"></div>
-                            </div>
+                            @foreach (var fila in Model.DetalleWebster.Filas.OrderByDescending(f => f.EscanosTotales))
+                            {
+                                <div class="escano-card glass-card @(fila.EscanosTotales > 0 ? "ganador" : "sin-escanos")">
+                                    <div class="escano-value">@fila.EscanosTotales</div>
+                                    <div class="escano-label">@fila.Partido</div>
+                                    <div class="escano-bar" style="width: @(Model.Eleccion.NumEscanos > 0 ? fila.EscanosTotales * 100.0 / Model.Eleccion.NumEscanos : 0)%"></div>
+                                </div>
+                            }
                         }
+                        else if (Model.DistribucionWebster != null)
+                        {
+                            @foreach (var item in Model.DistribucionWebster)
+                            {
+                                <div class="escano-card glass-card">
+                                    <div class="escano-value">@item.Escanos</div>
+                                    <div class="escano-label">@item.Nombre</div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- Detalle Calculo (Tabla) -->
+                    @if (Model.DetalleWebster != null && Model.DetalleWebster.Filas.Any())
+                    {
+                        <div class="detalle-calculo mt-4">
+                            <h4 class="text-sm font-bold mb-2 text-muted">Tabla de Cocientes</h4>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-xs">
+                                    <thead>
+                                        <tr>
+                                            <th>Partido</th>
+                                            <th>Votos</th>
+                                            @for (int i = 0; i < Math.Min(5, Model.Eleccion.NumEscanos); i++)
+                                            {
+                                                <th>/@(2 * i + 1)</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var fila in Model.DetalleWebster.Filas)
+                                        {
+                                            <tr>
+                                                <td class="font-bold">@fila.Partido</td>
+                                                <td>@fila.Votos.ToString("N0")</td>
+                                                @for (int i = 0; i < Math.Min(5, fila.ColCocientes.Count); i++)
+                                                {
+                                                    var c = fila.ColCocientes[i];
+                                                    <td class="@(c.EsGanador ? "bg-accent-low text-accent font-bold" : "")" title="Orden: @(c.EsGanador ? c.OrdenAsignacion : "-")">
+                                                        @c.Valor.ToString("N0")
+                                                        @if(c.EsGanador) { <span class="badge-orden">#@c.OrdenAsignacion</span> }
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Lista Ordenada -->
+                            <div class="mt-3">
+                                <h4 class="text-sm font-bold mb-2 text-muted">Orden de Asignación</h4>
+                                <div class="orden-asignacion-list">
+                                    @foreach (var c in Model.DetalleWebster.CocientesGanadores.OrderBy(x => x.OrdenAsignacion))
+                                    {
+                                        <div class="orden-item">
+                                            <span class="orden-num">#@c.OrdenAsignacion</span>
+                                            <span class="orden-partido">@c.Partido</span>
+                                            <span class="orden-valor">(@c.Valor.ToString("N0"))</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     }
                 </div>
             </div>
@@ -277,46 +427,87 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        font-size: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 1rem;
     }
     
-    .tabs {
+    .escanos-comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .metodo-card {
         display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
+        flex-direction: column;
+        gap: 1.5rem;
     }
     
-    .tab {
-        padding: 0.75rem 1.5rem;
-        background: var(--bg-panel);
-        border: 1px solid var(--border-color);
+    .metodo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .metodo-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        color: var(--text-primary);
+    }
+
+    .metodo-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 99px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .metodo-badge.favorable-grandes {
+        background: rgba(255, 159, 28, 0.15); /* Orange tint */
+        color: #ff9f1c;
+        border: 1px solid rgba(255, 159, 28, 0.3);
+    }
+
+    .metodo-badge.favorable-proporcional {
+        background: rgba(46, 196, 182, 0.15); /* Teal tint */
+        color: #2ec4b6;
+        border: 1px solid rgba(46, 196, 182, 0.3);
+    }
+    
+    .metodo-info {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.03);
         border-radius: var(--border-radius-sm);
-        color: var(--text-secondary);
-        cursor: pointer;
-        transition: all var(--transition-fast);
+        border-left: 3px solid var(--border-color);
     }
-    
-    .tab:hover {
-        background: var(--glass-bg);
+
+    .metodo-info p {
+        margin: 0;
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
     }
-    
-    .tab.active {
-        background: var(--accent);
-        color: #0D1017;
-        border-color: var(--accent);
+
+    .metodo-info p:last-child {
+        margin-bottom: 0;
     }
-    
+
     .escanos-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 1rem;
     }
     
     .escano-card {
-        padding: 1.5rem;
+        padding: 1.25rem;
         text-align: center;
         position: relative;
         overflow: hidden;
+        border: 1px solid var(--border-color);
     }
     
     .escano-value {
@@ -374,6 +565,103 @@
             flex-direction: column;
             gap: 1rem;
         }
+
+        .escanos-comparison-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+    }
+
+    /* Estilos para Tablas de Detalle */
+    .table-responsive {
+        overflow-x: auto;
+        margin-bottom: 1rem;
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--border-color);
+        background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        text-align: center;
+        white-space: nowrap;
+    }
+    
+    .table th {
+        background: rgba(255, 255, 255, 0.05);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .bg-accent-low {
+        background: rgba(var(--accent-rgb), 0.15) !important;
+        color: var(--accent) !important;
+    }
+    
+    .badge-orden {
+        display: inline-block;
+        padding: 0.1rem 0.3rem;
+        font-size: 0.6rem;
+        background: var(--accent);
+        color: #0b0e14;
+        border-radius: 4px;
+        margin-left: 0.25rem;
+        vertical-align: super;
+        line-height: 1;
+        font-weight: bold;
+    }
+    
+    .orden-asignacion-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .orden-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.2s ease;
+    }
+    
+    .orden-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--text-secondary);
+    }
+    
+    .orden-num {
+        font-weight: 800;
+        color: var(--accent);
+    }
+    
+    .orden-valor {
+        color: var(--text-muted);
+        font-size: 0.7rem;
+    }
+    
+    .escano-card.sin-escanos {
+        opacity: 0.5;
+        border-style: dashed;
+    }
+    
+    .escano-card.ganador {
+        border-color: var(--accent);
+        background: rgba(var(--accent-rgb), 0.05);
     }
 </style>
 
@@ -679,14 +967,6 @@
                 </text>
 
             }
-        }
-        
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            
-            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-            document.getElementById(`${tab}-content`).style.display = 'block';
         }
     </script>
 }
