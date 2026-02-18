@@ -21,22 +21,30 @@ public class ResultadosController : Controller
     /// <summary>
     /// Muestra los resultados de una eleccion
     /// </summary>
-    /// <summary>
-    /// Muestra los resultados de una eleccion
-    /// </summary>
     [HttpGet]
     [Route("Resultados/{id}")]
     [HttpGet]
     [Route("Resultados/Index/{id}")]
     public IActionResult Index(int id)
     {
-        var eleccion = _crud.GetEleccion(id);
+        var model = BuildResultadosViewModel(id);
         
-        if (eleccion == null)
+        if (model == null)
         {
             TempData["Error"] = "Elección no encontrada";
             return RedirectToAction("Elecciones", "Admin");
         }
+
+        return View(model);
+    }
+
+    /// <summary>
+    /// Construye el ViewModel de resultados reutilizable (Vista y API)
+    /// </summary>
+    private ResultadosViewModel? BuildResultadosViewModel(int id)
+    {
+        var eleccion = _crud.GetEleccion(id);
+        if (eleccion == null) return null;
 
         // Obtener datos crudos
         var candidatos = _crud.GetCandidatosByEleccion(id);
@@ -44,7 +52,7 @@ public class ResultadosController : Controller
         var listas = _crud.GetListasByEleccion(id);
         var totalVotos = votos.Count;
 
-        // --- PREPARAR DATOS PARA EL VIEWMODEL LEGACY (Para mantener views existentes si se requiere) ---
+        // --- PREPARAR DATOS PARA EL VIEWMODEL ---
         var candidatosConVotos = candidatos.Select(c => new CandidatoResultadoDto
         {
             Id = c.Id,
@@ -105,19 +113,18 @@ public class ResultadosController : Controller
             }
 
             // 2. Construir Input para Engine
+            // Fix: Asegurar que candidatos de lista se pasen correctamente
             var engineListas = listas.Select(l => new EngineLista
             {
                 Id = l.Id.ToString(),
                 Nombre = l.Nombre,
                 Votos = votos.Count(v => v.ListaId == l.Id),
-                // Asumimos que los candidatos están linkeados a la lista en BD
                 Candidatos = _crud.GetCandidatosByEleccion(id)
-                    .Where(c => c.ListaId == l.Id) // Asumiendo relación
+                    .Where(c => c.ListaId == l.Id)
                     .Select(c => new EngineCandidato { Nombre = c.Nombre, Partido = l.Nombre })
                     .ToList()
             }).ToList();
 
-            // Candidatos nominales (todos los de la elección que reciben votos directos)
             var engineCandidatos = candidatos.Select(c => new EngineCandidato
             {
                 Id = c.Id.ToString(),
@@ -142,7 +149,7 @@ public class ResultadosController : Controller
                 Tipo = MapTipo(eleccion.Tipo),
                 Metodo = EngineMetodo.Webster,
                 EscanosTotales = eleccion.NumEscanos,
-                EscanosNominales = escanosNominales, // Misma división
+                EscanosNominales = escanosNominales,
                 EscanosLista = escanosLista,
                 Listas = engineListas,
                 CandidatosNominales = engineCandidatos
@@ -154,12 +161,9 @@ public class ResultadosController : Controller
                 // D'Hondt
                 var resultDHondt = ElectionEngine.Run(inputDHondt);
                 
-                // Mapear resultado engine a ViewModel
                 model.DistribucionDHondt = resultDHondt.DistribucionProporcional
                     .Select(x => (x.Partido, x.Escanos)).ToList();
                 
-                // Mapear Detalle (convertir tipos del Engine a tipos del ViewModel existentes o nuevos)
-                // Usaremos un adaptador simple aquí para reutilizar clases existentes si es posible, o mapear.
                 model.DetalleDHondt = MapDetalle(resultDHondt.DetalleProporcional, escanosLista);
 
                 // Webster
@@ -170,8 +174,7 @@ public class ResultadosController : Controller
                 model.DetalleWebster = MapDetalle(resultWebster.DetalleProporcional, escanosLista);
             }
         }
-
-        return View(model);
+        return model;
     }
 
     private EngineTipoEleccion MapTipo(TipoEleccion tipo)
@@ -265,45 +268,31 @@ public class ResultadosController : Controller
     }
 
     /// <summary>
+    /// Retorna la vista parcial con los resultados actualizados (para AJAX)
+    /// </summary>
+    [HttpGet]
+    [Route("Resultados/GetResultadosPartial/{id}")]
+    public IActionResult GetResultadosPartial(int id)
+    {
+        var model = BuildResultadosViewModel(id);
+        if (model == null) return NotFound();
+        return PartialView("_ResultadosPartial", model);
+    }
+
+    /// <summary>
     /// Datos JSON para graficos en tiempo real
     /// </summary>
     [HttpGet]
+    [Route("Resultados/GetDatosGrafico/{id}")]
     public IActionResult GetDatosGrafico(int id)
     {
-        var eleccion = _crud.GetEleccion(id);
-        if (eleccion == null)
+        var model = BuildResultadosViewModel(id);
+        if (model == null)
             return Json(new { success = false, message = "Elección no encontrada" });
-
-        // Obtener candidatos y votos
-        var candidatos = _crud.GetCandidatosByEleccion(id);
-        var votos = _crud.GetVotosByEleccion(id);
-        var totalVotos = votos.Count;
-        
-        var candidatosConVotos = candidatos.Select(c => new
-        {
-            Nombre = c.Nombre,
-            PartidoPolitico = c.PartidoPolitico ?? "",
-            Votos = votos.Count(v => v.CandidatoId == c.Id),
-            Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.CandidatoId == c.Id) / totalVotos * 100 : 0
-        }).OrderByDescending(c => c.Votos).ToList();
-
-        // Resultados Listas (opcional)
-        var listas = _crud.GetListasByEleccion(id);
-        var listasConVotos = listas.Select(l => new
-        {
-            Nombre = l.Nombre,
-            Votos = votos.Count(v => v.ListaId == l.Id),
-            Porcentaje = totalVotos > 0 ? (double)votos.Count(v => v.ListaId == l.Id) / totalVotos * 100 : 0
-        }).OrderByDescending(l => l.Votos).ToList();
 
         return Json(new { 
             success = true, 
-            data = new {
-                TotalVotos = totalVotos,
-                Candidatos = candidatosConVotos,
-                Listas = listasConVotos,
-                Tipo = eleccion.Tipo.ToString()
-            }
+            data = model
         });
     }
 }

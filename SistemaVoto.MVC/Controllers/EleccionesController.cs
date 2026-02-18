@@ -141,7 +141,9 @@ public class EleccionesController : Controller
         
         // Verificar si el usuario puede votar
         model.PuedeVotar = eleccion.Estado == EstadoEleccion.Activa && 
-                          User.Identity?.IsAuthenticated == true;
+                          User.Identity?.IsAuthenticated == true &&
+                          !yaVoto;
+        model.YaVoto = yaVoto;
         
         return View(model);
     }
@@ -345,6 +347,7 @@ public class EleccionDetalleVM
     public List<CandidatoDto> Candidatos { get; set; } = new();
     public List<ListaInfoDto> Listas { get; set; } = new();
     public bool PuedeVotar { get; set; }
+    public bool YaVoto { get; set; }
 }
 
 public class ListaInfoDto

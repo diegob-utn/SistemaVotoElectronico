@@ -67,12 +67,12 @@
                 <span>Debe <a href="/Auth/Login?returnUrl=/Elecciones/Detalle/@Model.Eleccion.Id">iniciar sesión</a> para participar en esta elección.</span>
             </div>
         }
-        else if (Model.Eleccion.Estado == "Cerrada")
+        else if (Model.Eleccion.Estado == "Cerrada" || Model.YaVoto)
         {
              <div class="mt-4">
-                <a href="/Resultados/@Model.Eleccion.Id" class="btn btn-primary btn-lg w-100">
-                    <i data-lucide="bar-chart" style="width: 24px; height: 24px; margin-right: 12px;"></i>
-                    Ver Resultados
+                <a href="/Resultados/Index/@Model.Eleccion.Id" class="btn btn-secondary btn-lg w-100">
+                    <i data-lucide="bar-chart-2" style="width: 24px; height: 24px; margin-right: 12px;"></i>
+                    Ver Resultados en Tiempo Real
                 </a>
             </div>
         }

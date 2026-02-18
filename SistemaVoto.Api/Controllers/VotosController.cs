@@ -160,7 +160,7 @@ namespace SistemaVoto.Api.Controllers
                 await _db.SaveChangesAsync();
 
                 // 9. Notificar SignalR
-                await _hubContext.Clients.Group(eleccionId.ToString()).SendAsync("ActualizacionResultados", eleccionId);
+                await _hubContext.Clients.Group($"eleccion-{eleccionId}").SendAsync("ActualizacionResultados", eleccionId);
 
                 return Ok(new ApiResult<object> { Success = true, Message = "Voto registrado exitosamente", Data = new { votoId = voto.Id } });
             }

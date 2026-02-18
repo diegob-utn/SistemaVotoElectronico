@@ -1,0 +1,254 @@
+@using SistemaVoto.MVC.ViewModels
+@model ResultadosViewModel
+
+<!-- Stats -->
+@if (Model.Resultados != null)
+{
+    <div class="stats-row">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(var(--accent-rgb), 0.15);">
+                <i data-lucide="vote" style="width: 24px; height: 24px; color: var(--accent);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Resultados.TotalVotos.ToString("N0")</div>
+            <div class="stat-card-label">Total Votos</div>
+        </div>
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon" style="background: rgba(134, 179, 0, 0.15);">
+                <i data-lucide="users" style="width: 24px; height: 24px; color: var(--color-success);"></i>
+            </div>
+            <div class="stat-card-value">@Model.Resultados.Candidatos.Count</div>
+            <div class="stat-card-label">Candidatos</div>
+        </div>
+        @if (Model.Eleccion.NumEscanos > 0)
+        {
+            <div class="stat-card glass-card">
+                <div class="stat-card-icon" style="background: rgba(163, 122, 204, 0.15);">
+                    <i data-lucide="armchair" style="width: 24px; height: 24px; color: var(--color-purple);"></i>
+                </div>
+                <div class="stat-card-value">@Model.Eleccion.NumEscanos</div>
+                <div class="stat-card-label">Escanos</div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Charts Grid -->
+<div class="charts-grid">
+    <!-- Bar Chart -->
+    <div class="card">
+        <div class="card-header">
+            @{
+                var tituloGrafico = (Model.Resultados?.Listas != null && Model.Resultados.Listas.Any()) 
+                                    ? "Votos por Lista" 
+                                    : "Votos por Candidato";
+            }
+            <h4 class="card-title">@tituloGrafico</h4>
+        </div>
+        <div class="card-body">
+            <div id="chartResultados"></div>
+        </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title">Distribucion de Votos</h4>
+        </div>
+        <div class="card-body">
+            <div id="chartDistribucion"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Distribucion de Escanos -->
+@if (Model.DistribucionDHondt != null && Model.DistribucionDHondt.Any())
+{
+    <div class="escanos-section">
+        <h2 class="section-title">
+            <i data-lucide="armchair" style="width: 24px; height: 24px;"></i>
+            Distribución de Escaños (Proyección)
+        </h2>
+        
+        <div class="escanos-comparison-grid">
+            <!-- Columna D'Hondt -->
+            <div class="metodo-card method-container">
+                <div class="method-header-clean">
+                    <div class="icon-circle bg-orange-light">
+                            <i data-lucide="calculator" class="text-orange"></i>
+                    </div>
+                    <div>
+                        <h3 class="method-title">Método D'Hondt</h3>
+                        <span class="method-subtitle">Favorece mayorías • Divisores 1, 2, 3...</span>
+                    </div>
+                </div>
+
+                <!-- Resumen Escaños -->
+                <div class="escanos-grid-clean">
+                    @if (Model.DetalleDHondt != null)
+                    {
+                        @foreach (var fila in Model.DetalleDHondt.Filas.OrderByDescending(f => f.EscanosTotales))
+                        {
+                            <div class="escano-card-clean @(fila.EscanosTotales > 0 ? "is-winner" : "is-empty")">
+                                <div class="escano-count">@fila.EscanosTotales</div>
+                                <div class="escano-party">@fila.Partido</div>
+                                @if(fila.EscanosTotales > 0) 
+                                {
+                                    <div class="winner-indicator"></div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Lista de Asignación Simple -->
+                @if (Model.DetalleDHondt != null && Model.DetalleDHondt.CocientesGanadores.Any())
+                {
+                    <div class="assignment-list-container">
+                        <h4 class="list-title">Orden de Asignación</h4>
+                        <div class="assignment-list">
+                            @foreach (var c in Model.DetalleDHondt.CocientesGanadores.OrderBy(x => x.OrdenAsignacion))
+                            {
+                                <div class="assignment-item">
+                                    <span class="assignment-badge">#@c.OrdenAsignacion</span>
+                                    <span class="assignment-party">@c.Partido</span>
+                                    <span class="assignment-value">(@c.Valor.ToString("N0"))</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <!-- Columna Webster -->
+            <div class="metodo-card method-container">
+                <div class="method-header-clean">
+                    <div class="icon-circle bg-teal-light">
+                            <i data-lucide="scale" class="text-teal"></i>
+                    </div>
+                    <div>
+                        <h3 class="method-title">Método Webster</h3>
+                        <span class="method-subtitle">Proporcional • Divisores 1, 3, 5...</span>
+                    </div>
+                </div>
+
+                <!-- Resumen Escaños -->
+                <div class="escanos-grid-clean">
+                    @if (Model.DetalleWebster != null)
+                    {
+                        @foreach (var fila in Model.DetalleWebster.Filas.OrderByDescending(f => f.EscanosTotales))
+                        {
+                            <div class="escano-card-clean @(fila.EscanosTotales > 0 ? "is-winner-webster" : "is-empty")">
+                                <div class="escano-count">@fila.EscanosTotales</div>
+                                <div class="escano-party">@fila.Partido</div>
+                                    @if(fila.EscanosTotales > 0) 
+                                {
+                                    <div class="winner-indicator-webster"></div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Lista de Asignación Simple -->
+                @if (Model.DetalleWebster != null && Model.DetalleWebster.CocientesGanadores.Any())
+                {
+                    <div class="assignment-list-container">
+                        <h4 class="list-title">Orden de Asignación</h4>
+                        <div class="assignment-list">
+                            @foreach (var c in Model.DetalleWebster.CocientesGanadores.OrderBy(x => x.OrdenAsignacion))
+                            {
+                                <div class="assignment-item">
+                                    <span class="assignment-badge bg-teal">#@c.OrdenAsignacion</span>
+                                    <span class="assignment-party">@c.Partido</span>
+                                    <span class="assignment-value">(@c.Valor.ToString("N0"))</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Detailed Results Table -->
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h4 class="card-title">Resultados Detallados</h4>
+    </div>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Posicion</th>
+                    <th>Candidato</th>
+                    <th>Partido</th>
+                    <th>Votos</th>
+                    <th>Porcentaje</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Resultados?.Listas != null && Model.Resultados.Listas.Any())
+                {
+                    <tr><td colspan="5" class="text-center"><strong>Resultados por Lista</strong></td></tr>
+                    var posicion = 1;
+                    foreach (var lista in Model.Resultados.Listas)
+                    {
+                        <tr>
+                            <td>@posicion</td>
+                            <td>@lista.Nombre</td>
+                            <td>-</td>
+                            <td><strong>@lista.Votos.ToString("N0")</strong></td>
+                            <td>
+                                <div class="progress-cell">
+                                    <div class="progress-bar" style="width: @lista.Porcentaje%"></div>
+                                    <span>@lista.Porcentaje.ToString("F1")%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        posicion++;
+                    }
+                        <tr><td colspan="5" class="text-center"><strong>Resultados por Candidato</strong></td></tr>
+                }
+
+                @if (Model.Resultados?.Candidatos != null)
+                {
+                    var posicion = 1;
+                    @foreach (var candidato in Model.Resultados.Candidatos.OrderByDescending(c => c.Votos))
+                    {
+                        <tr>
+                            <td>
+                                @if (posicion == 1)
+                                {
+                                    <span class="badge badge-accent">1ro</span>
+                                }
+                                else if (posicion == 2)
+                                {
+                                    <span class="badge badge-info">2do</span>
+                                }
+                                else if (posicion == 3)
+                                {
+                                    <span class="badge badge-warning">3ro</span>
+                                }
+                                else
+                                {
+                                    <span>@posicion</span>
+                                }
+                            </td>
+                            <td>@candidato.Nombre</td>
+                            <td>@candidato.PartidoPolitico</td>
+                            <td><strong>@candidato.Votos.ToString("N0")</strong></td>
+                            <td>
+                                <div class="progress-cell">
+                                    <div class="progress-bar" style="width: @candidato.Porcentaje%"></div>
+                                    <span>@candidato.Porcentaje.ToString("F1")%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        posicion++;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
