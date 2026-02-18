@@ -99,6 +99,10 @@
             <a href="/Privacy">Privacidad</a> | 
             <a href="/Terms">Términos</a>
         </p>
+         @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Resultados")
+         {
+            <p><button class="btn btn-sm btn-outline-secondary" onclick="window.debugSignalR && window.debugSignalR()" style="opacity: 0.5;">📶 Debug SignalR</button></p>
+         }
     </footer>
 
     <!-- Scripts -->

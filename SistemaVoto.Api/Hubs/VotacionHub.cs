@@ -4,7 +4,10 @@ namespace SistemaVoto.Api.Hubs
 {
     public class VotacionHub : Hub
     {
-        public Task JoinEleccion(int eleccionId) =>
-            Groups.AddToGroupAsync(Context.ConnectionId, $"eleccion-{eleccionId}");
+        public async Task JoinEleccion(string eleccionId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"eleccion-{eleccionId}");
+            Console.WriteLine($"[SignalR] Client {Context.ConnectionId} joined group eleccion-{eleccionId}");
+        }
     }
 }

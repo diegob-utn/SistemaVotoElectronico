@@ -43,27 +43,33 @@ public class ElectionBackgroundService : BackgroundService
     {
         using (var scope = _serviceProvider.CreateScope())
         {
-            var context = scope.ServiceProvider.GetRequiredService<SistemaVotoDbContext>();
-            
-            // Buscar elecciones activas cuya fecha de fin ya pasó
-            var now = DateTime.UtcNow;
-            
-            var eleccionesVencidas = await context.Elecciones
-                .Where(e => e.Estado == EstadoEleccion.Activa && e.FechaFinUtc <= now)
-                .ToListAsync(stoppingToken);
-
-            if (eleccionesVencidas.Any())
+            try 
             {
-                _logger.LogInformation($"Se encontraron {eleccionesVencidas.Count} elecciones vencidas para cerrar.");
+                var context = scope.ServiceProvider.GetRequiredService<SistemaVotoDbContext>();
+                
+                // Buscar elecciones activas cuya fecha de fin ya pasó
+                var now = DateTime.UtcNow;
+                
+                var eleccionesVencidas = await context.Elecciones
+                    .Where(e => e.Estado == EstadoEleccion.Activa && e.FechaFinUtc <= now)
+                    .ToListAsync(stoppingToken);
 
-                foreach (var eleccion in eleccionesVencidas)
+                if (eleccionesVencidas.Any())
                 {
-                    eleccion.Estado = EstadoEleccion.Cerrada;
-                    // Opcional: eleccion.Activo = false; // Depende de si queremos que siga visible como 'Activo' en UI, pero el Estado manda.
-                    _logger.LogInformation($"Cerrando elección: {eleccion.Titulo} (ID: {eleccion.Id})");
-                }
+                    _logger.LogInformation($"Se encontraron {eleccionesVencidas.Count} elecciones vencidas para cerrar.");
 
-                await context.SaveChangesAsync(stoppingToken);
+                    foreach (var eleccion in eleccionesVencidas)
+                    {
+                        eleccion.Estado = EstadoEleccion.Cerrada;
+                        _logger.LogInformation($"Cerrando elección: {eleccion.Titulo} (ID: {eleccion.Id})");
+                    }
+
+                    await context.SaveChangesAsync(stoppingToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error dentro de CheckAndCloseElectionsAsync");
             }
         }
     }

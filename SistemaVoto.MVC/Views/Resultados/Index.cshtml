@@ -497,11 +497,11 @@
                 connection.onreconnected(function() {
                     console.log("SignalR: Reconectado.");
                     setSignalRStatus('connected');
-                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID).catch(err => console.error(err));
+                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID.toString()).catch(err => console.error(err));
                 });
 
                 connection.onclose(function() {
-                    console.log("SignalR: Conexión cerrada.");
+                    console.warn("SignalR: Conexión cerrada.");
                     setSignalRStatus('disconnected');
                 });
 
@@ -513,11 +513,13 @@
                 });
 
                 connection.start().then(function () {
-                    console.log("SignalR Conectado.");
+                    console.log("SignalR Conectado. ID: " + connection.connectionId);
                     setSignalRStatus('connected');
-                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID).catch(err => console.error(err));
+                    // Invoke with string to match Hub signature
+                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID.toString()).catch(err => console.error("Error uniéndose al grupo:", err));
                 }).catch(function (err) {
                     console.error("SignalR Connection Error: " + err);
+                    setSignalRStatus('disconnected');
                     setSignalRStatus('disconnected');
                 });
 
@@ -590,5 +592,29 @@
                 setTimeout(() => div.remove(), 500);
             }, 3000);
         }
+        }
+        
+        // Diagnostic Tool (Re-added)
+        window.debugSignalR = async function() {
+            console.log("--- SignalR Diagnostics ---");
+            console.log("Connection State:", connection ? connection.state : "No connection object");
+            console.log("Current Election ID:", CURRENT_ELECCION_ID, "Type:", typeof CURRENT_ELECCION_ID);
+            
+            if (connection && connection.state === "Connected") {
+                try {
+                    console.log("Attempting to re-join group...");
+                    await connection.invoke("JoinEleccion", CURRENT_ELECCION_ID.toString());
+                    console.log("JoinEleccion invoked successfully.");
+                    alert("SignalR: Conectado y unido al grupo correctamente.");
+                } catch (e) {
+                    console.error("JoinEleccion failed:", e);
+                    alert("SignalR Error: " + e.toString());
+                }
+            } else {
+                console.warn("Cannot test JoinEleccion: Not connected.");
+                alert("SignalR: No conectado. Estado: " + (connection ? connection.state : "Nulo"));
+            }
+            console.log("---------------------------");
+        };
     </script>
 }
