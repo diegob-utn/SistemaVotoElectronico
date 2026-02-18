@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using SistemaVoto.Data.Data;
 
 namespace SistemaVoto.Api
@@ -14,6 +15,19 @@ namespace SistemaVoto.Api
             builder.Services.AddDbContext<SistemaVotoDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DbContext.postgres-render")
                 ?? throw new InvalidOperationException("Connection string 'DbContext.postgres-render' not found.")));
+
+            // Configurar Identity (Necesario para UserManager)
+            builder.Services.AddIdentityCore<IdentityUser>(options => 
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 4;
+            })
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<SistemaVotoDbContext>()
+            .AddDefaultTokenProviders();
 
             builder.Services.AddControllers();
 
