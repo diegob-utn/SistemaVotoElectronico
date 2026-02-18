@@ -472,6 +472,8 @@
             }
         }
 
+        var connection; // Global for debugging
+
         function setupSignalR() {
             if (typeof signalR === 'undefined') {
                 console.error("SignalR library not loaded!");
@@ -483,7 +485,7 @@
                 console.log("Conectando SignalR a: " + hubUrl);
                 setSignalRStatus('connecting');
                 
-                var connection = new signalR.HubConnectionBuilder()
+                connection = new signalR.HubConnectionBuilder()
                     .withUrl(hubUrl) 
                     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
                     .configureLogging(signalR.LogLevel.Information)
@@ -497,7 +499,7 @@
                 connection.onreconnected(function() {
                     console.log("SignalR: Reconectado.");
                     setSignalRStatus('connected');
-                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID.toString()).catch(err => console.error(err));
+                    connection.invoke("JoinEleccion", parseInt(CURRENT_ELECCION_ID)).catch(err => console.error(err));
                 });
 
                 connection.onclose(function() {
@@ -516,7 +518,7 @@
                     console.log("SignalR Conectado. ID: " + connection.connectionId);
                     setSignalRStatus('connected');
                     // Invoke with string to match Hub signature
-                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID.toString()).catch(err => console.error("Error uniéndose al grupo:", err));
+                    connection.invoke("JoinEleccion", parseInt(CURRENT_ELECCION_ID)).catch(err => console.error("Error uniéndose al grupo:", err));
                 }).catch(function (err) {
                     console.error("SignalR Connection Error: " + err);
                     setSignalRStatus('disconnected');
@@ -592,7 +594,7 @@
                 setTimeout(() => div.remove(), 500);
             }, 3000);
         }
-        }
+
         
         // Diagnostic Tool (Re-added)
         window.debugSignalR = async function() {
@@ -603,7 +605,7 @@
             if (connection && connection.state === "Connected") {
                 try {
                     console.log("Attempting to re-join group...");
-                    await connection.invoke("JoinEleccion", CURRENT_ELECCION_ID.toString());
+                    await connection.invoke("JoinEleccion", parseInt(CURRENT_ELECCION_ID));
                     console.log("JoinEleccion invoked successfully.");
                     alert("SignalR: Conectado y unido al grupo correctamente.");
                 } catch (e) {

@@ -29,6 +29,7 @@ namespace SistemaVoto.Api.Controllers
         [HttpPost("votar")]
         public async Task<ActionResult<ApiResult<object>>> Votar(int eleccionId, [FromBody] VotarRequest req)
         {
+            Console.WriteLine($"[API] Recibida solicitud de voto para eleccion {eleccionId} usuario {req.UsuarioId}");
             try 
             {
                 var eleccion = await _db.Elecciones
@@ -160,7 +161,9 @@ namespace SistemaVoto.Api.Controllers
                 await _db.SaveChangesAsync();
 
                 // 9. Notificar SignalR
+                Console.WriteLine($"[SignalR] Intentando enviar actualización para eleccion-{eleccionId}");
                 await _hubContext.Clients.Group($"eleccion-{eleccionId}").SendAsync("ActualizacionResultados", eleccionId);
+                Console.WriteLine($"[SignalR] Mensaje enviado a grupo eleccion-{eleccionId}");
 
                 return Ok(new ApiResult<object> { Success = true, Message = "Voto registrado exitosamente", Data = new { votoId = voto.Id } });
             }
