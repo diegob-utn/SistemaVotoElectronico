@@ -19,7 +19,11 @@
             <h1>@Model.Eleccion.Titulo</h1>
             <p class="text-muted">Resultados electorales</p>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display:flex; align-items:center; gap:1rem;">
+            <span id="signalr-status" style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--text-muted);">
+                <span id="signalr-dot" style="width:8px;height:8px;border-radius:50%;background:#888;display:inline-block;"></span>
+                <span id="signalr-text">Conectando...</span>
+            </span>
             <a href="/Resultados/ExportarCsv/@Model.Eleccion.Id" class="btn btn-secondary">
                 <i data-lucide="download" style="width: 18px; height: 18px;"></i>
                 Exportar CSV
@@ -440,20 +444,66 @@
         }
 
         // --- SignalR Logic ---
+        function setSignalRStatus(status) {
+            var dot = document.getElementById('signalr-dot');
+            var text = document.getElementById('signalr-text');
+            if (!dot || !text) return;
+            
+            switch(status) {
+                case 'connected':
+                    dot.style.background = '#4ade80';
+                    text.textContent = 'En vivo';
+                    text.style.color = '#4ade80';
+                    break;
+                case 'reconnecting':
+                    dot.style.background = '#facc15';
+                    text.textContent = 'Reconectando...';
+                    text.style.color = '#facc15';
+                    break;
+                case 'disconnected':
+                    dot.style.background = '#ef4444';
+                    text.textContent = 'Desconectado';
+                    text.style.color = '#ef4444';
+                    break;
+                default:
+                    dot.style.background = '#888';
+                    text.textContent = 'Conectando...';
+                    text.style.color = 'var(--text-muted)';
+            }
+        }
+
         function setupSignalR() {
             if (typeof signalR === 'undefined') {
                 console.error("SignalR library not loaded!");
+                setSignalRStatus('disconnected');
                 return;
             }
             try {
                 var hubUrl = API_URL + "/hubs/votacion";
                 console.log("Conectando SignalR a: " + hubUrl);
+                setSignalRStatus('connecting');
                 
                 var connection = new signalR.HubConnectionBuilder()
                     .withUrl(hubUrl) 
-                    .withAutomaticReconnect()
+                    .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
                     .configureLogging(signalR.LogLevel.Information)
                     .build();
+
+                connection.onreconnecting(function() {
+                    console.log("SignalR: Reconectando...");
+                    setSignalRStatus('reconnecting');
+                });
+
+                connection.onreconnected(function() {
+                    console.log("SignalR: Reconectado.");
+                    setSignalRStatus('connected');
+                    connection.invoke("JoinEleccion", CURRENT_ELECCION_ID).catch(err => console.error(err));
+                });
+
+                connection.onclose(function() {
+                    console.log("SignalR: Conexión cerrada.");
+                    setSignalRStatus('disconnected');
+                });
 
                 connection.on("ActualizacionResultados", async function (id) {
                     console.log("SignalR: Actualizacion recibida para eleccion " + id);
@@ -464,14 +514,16 @@
 
                 connection.start().then(function () {
                     console.log("SignalR Conectado.");
-                    // Correction: Hub method is JoinEleccion, not JoinGroup
+                    setSignalRStatus('connected');
                     connection.invoke("JoinEleccion", CURRENT_ELECCION_ID).catch(err => console.error(err));
                 }).catch(function (err) {
                     console.error("SignalR Connection Error: " + err);
+                    setSignalRStatus('disconnected');
                 });
 
             } catch (e) {
                 console.error("SignalR Setup Error", e);
+                setSignalRStatus('disconnected');
             }
         }
 
@@ -486,19 +538,28 @@
                         contentEl.innerHTML = html;
                         lucide.createIcons(); // Refresh icons
                     }
+                } else {
+                    console.error("Error fetching partial HTML:", htmlRes.status, htmlRes.statusText);
                 }
 
                 // 2. Fetch JSON (Data for Charts)
                 var jsonRes = await fetch('/Resultados/GetDatosGrafico/' + CURRENT_ELECCION_ID);
                 if (jsonRes.ok) {
                     var result = await jsonRes.json();
-                    if (result.success) { // Handle camelCase or PascalCase 'success'
-                        console.log("Refreshing charts with data:", result.data);
-                        initCharts(result.data);
-                    } else if (result.Success) {
-                         console.log("Refreshing charts with data (Pascal):", result.Data);
-                         initCharts(result.Data);
+                    console.log("SignalR: Raw JSON response:", JSON.stringify(result).substring(0, 500));
+                    
+                    // Extraer data independientemente del casing (success/Success, data/Data)
+                    var isSuccess = result.success || result.Success;
+                    var chartData = result.data || result.Data;
+                    
+                    if (isSuccess && chartData) {
+                        console.log("SignalR: Refreshing charts with data:", chartData);
+                        initCharts(chartData);
+                    } else {
+                        console.warn("SignalR: Response was not successful or missing data:", result);
                     }
+                } else {
+                    console.error("Error fetching chart data:", jsonRes.status, jsonRes.statusText);
                 }
                 
                 // Show toast or indicator

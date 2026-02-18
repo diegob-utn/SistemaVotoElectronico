@@ -281,6 +281,7 @@ public class ResultadosController : Controller
 
     /// <summary>
     /// Datos JSON para graficos en tiempo real
+    /// Usa el mismo formato que el render inicial (PascalCase, sin ValueTuples)
     /// </summary>
     [HttpGet]
     [Route("Resultados/GetDatosGrafico/{id}")]
@@ -288,12 +289,45 @@ public class ResultadosController : Controller
     {
         var model = BuildResultadosViewModel(id);
         if (model == null)
-            return Json(new { success = false, message = "Elección no encontrada" });
+            return Content(
+                System.Text.Json.JsonSerializer.Serialize(
+                    new { success = false, message = "Elección no encontrada" }),
+                "application/json");
 
-        return Json(new { 
-            success = true, 
-            data = model
-        });
+        // Serializar con el MISMO formato que el render inicial en Index.cshtml
+        // PascalCase + solo propiedades relevantes para gráficos (sin ValueTuples)
+        var payload = new {
+            success = true,
+            data = new {
+                Eleccion = new {
+                    Id = model.Eleccion.Id,
+                    Titulo = model.Eleccion.Titulo,
+                    Tipo = model.Eleccion.Tipo,
+                    Estado = model.Eleccion.Estado
+                },
+                Resultados = new {
+                    TotalVotos = model.Resultados?.TotalVotos ?? 0,
+                    Listas = model.Resultados?.Listas?.Select(l => (object)new {
+                        Id = l.Id,
+                        Nombre = l.Nombre,
+                        Votos = l.Votos,
+                        Porcentaje = l.Porcentaje
+                    }) ?? new List<object>(),
+                    Candidatos = model.Resultados?.Candidatos?.Select(c => (object)new {
+                        Id = c.Id,
+                        Nombre = c.Nombre,
+                        PartidoPolitico = c.PartidoPolitico,
+                        Votos = c.Votos,
+                        Porcentaje = c.Porcentaje
+                    }) ?? new List<object>()
+                }
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(payload,
+            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null });
+
+        return Content(json, "application/json");
     }
 }
 
