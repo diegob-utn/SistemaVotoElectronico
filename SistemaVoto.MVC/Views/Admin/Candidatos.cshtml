@@ -2,7 +2,8 @@
 @model List<Candidato>
 @{
     ViewData["Title"] = "Candidatos";
-    var eleccionId = ViewBag.EleccionIdFilter as int?;
+    // Corregido: Usar ViewBag.EleccionId (que viene del controller) si Filter es nulo
+    var eleccionId = (ViewBag.EleccionIdFilter as int?) ?? (ViewBag.EleccionId as int?);
     var elecciones = ViewBag.Elecciones as List<Eleccion> ?? new List<Eleccion>();
 }
 
@@ -16,7 +17,7 @@
             </h1>
             <p class="text-muted">Administre los candidatos de las elecciones</p>
         </div>
-        <a href="/Admin/CrearCandidato@(eleccionId.HasValue ? $"?eleccionId={eleccionId}" : "")" class="btn btn-primary">
+        <a href="/Admin/CrearCandidato@(eleccionId.HasValue && eleccionId.Value > 0 ? $"?eleccionId={eleccionId}" : "")" class="btn btn-primary">
             <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
             Nuevo Candidato
         </a>
@@ -77,8 +78,11 @@
                         <p class="candidate-election text-muted">@eleccionNombre</p>
                     </div>
                     <div class="candidate-actions">
+                        <a href="/Admin/EditarCandidato/@candidato.Id" class="btn btn-ghost btn-sm" title="Editar">
+                            <i data-lucide="edit-2" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+                        </a>
                         <form asp-action="EliminarCandidato" method="post" 
-                              onsubmit="return confirm('¿Seguro que desea eliminar este candidato?')">
+                              onsubmit="return confirm('¿Seguro que desea eliminar este candidato?')" style="display:inline;">
                             <input type="hidden" name="id" value="@candidato.Id" />
                             <input type="hidden" name="eleccionId" value="@eleccionId" />
                             <button type="submit" class="btn btn-ghost btn-sm" title="Eliminar">
@@ -95,10 +99,10 @@
                 <i data-lucide="users" style="width: 64px; height: 64px; opacity: 0.3;"></i>
                 <h3>No hay candidatos registrados</h3>
                 <p class="text-muted">Comience agregando candidatos a las elecciones</p>
-                <a href="/Admin/CrearCandidato" class="btn btn-primary">
+                <!-- <a href="/Admin/CrearCandidato" class="btn btn-primary">
                     <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
                     Agregar Candidato
-                </a>
+                </a> -->
             </div>
         }
     </div>
