@@ -37,6 +37,14 @@ public class EleccionViewModel
     [Range(0, 1000, ErrorMessage = "El número debe ser mayor o igual a 0")]
     public int NumEscanos { get; set; }
 
+    [Display(Name = "Escaños Nominales (Solo Mixta)")]
+    [Range(0, 1000, ErrorMessage = "El número debe ser mayor o igual a 0")]
+    public int EscanosNominales { get; set; }
+
+    [Display(Name = "Escaños por Lista (Solo Mixta/Plancha)")]
+    [Range(0, 1000, ErrorMessage = "El número debe ser mayor o igual a 0")]
+    public int EscanosLista { get; set; }
+
     // Control de Acceso (Fase 10)
     [Display(Name = "Tipo de Acceso")]
     public string Acceso { get; set; } = "Generada"; // Generada, Privada, Publica
@@ -64,25 +72,7 @@ public class EleccionViewModel
 
 
 
-/// <summary>
-/// ViewModel para asignar usuarios a una elección privada
-/// </summary>
-public class AsignarUsuariosViewModel
-{
-    public int EleccionId { get; set; }
-    public string EleccionTitulo { get; set; } = null!;
-    public int CupoMaximo { get; set; }
-    public int UsuariosAsignadosCount { get; set; }
-    public List<UsuarioAsignacionDto> Usuarios { get; set; } = new();
-}
 
-public class UsuarioAsignacionDto
-{
-    public string Id { get; set; } = null!;
-    public string Email { get; set; } = null!;
-    public string Nombre { get; set; } = null!;
-    public bool Asignado { get; set; }
-}
 
 /// <summary>
 /// ViewModel para vista de historial de votos

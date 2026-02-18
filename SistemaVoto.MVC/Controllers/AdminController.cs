@@ -152,8 +152,20 @@ public class AdminController : Controller
             UsaUbicacion = model.UsaUbicacion,
             ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna,
             Acceso = acceso,
-            CupoMaximo = model.CupoMaximo
+
+            CupoMaximo = model.CupoMaximo,
+            EscanosNominales = model.EscanosNominales,
+            EscanosLista = model.EscanosLista
         };
+
+        // Logic fix: Ensure sums match for Mixed
+        if (tipo == TipoEleccion.Mixta && (model.EscanosNominales + model.EscanosLista != numEscanos))
+        {
+             // Fallback implicit or error? For now update NumEscanos to be safe or just trust inputs
+             // Better: If they don't match, prioritize Sum
+             if (model.EscanosNominales + model.EscanosLista > 0)
+                  eleccion.NumEscanos = model.EscanosNominales + model.EscanosLista;
+        }
 
         try
         {
@@ -225,7 +237,10 @@ public class AdminController : Controller
             NumEscanos = eleccion.NumEscanos,
             Activo = eleccion.Activo,
             UsaUbicacion = eleccion.UsaUbicacion,
-            ModoUbicacion = eleccion.ModoUbicacion
+
+            ModoUbicacion = eleccion.ModoUbicacion,
+            EscanosNominales = eleccion.EscanosNominales,
+            EscanosLista = eleccion.EscanosLista
         };
         
         ViewBag.Ubicaciones = _crud.GetUbicaciones().OrderBy(u => u.Tipo).ThenBy(u => u.Nombre).ToList();
@@ -273,7 +288,9 @@ public class AdminController : Controller
             UsaUbicacion = model.UsaUbicacion,
             ModoUbicacion = model.UsaUbicacion ? model.ModoUbicacion : ModoUbicacion.Ninguna,
             Acceso = model.Acceso switch { "Privada" => TipoAcceso.Privada, "Publica" => TipoAcceso.Publica, _ => TipoAcceso.Generada },
-            CupoMaximo = model.CupoMaximo
+            CupoMaximo = model.CupoMaximo,
+            EscanosNominales = model.EscanosNominales,
+            EscanosLista = model.EscanosLista
         };
 
         try
@@ -718,24 +735,17 @@ public class AdminController : Controller
     /// <summary>
     /// Lista de usuarios de Identity
     /// </summary>
-    public async Task<IActionResult> UsuariosIdentity()
+    public IActionResult Usuarios()
     {
-        var usuarios = _userManager.Users.ToList();
-        var viewModels = new List<IdentityUserViewModel>();
-        
-        foreach (var user in usuarios)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            viewModels.Add(new IdentityUserViewModel
-            {
-                Id = user.Id,
-                Email = user.Email ?? string.Empty,
-                UserName = user.UserName,
-                EmailConfirmed = user.EmailConfirmed,
-                Roles = roles.ToList()
-            });
-        }
-        
+        return RedirectToAction("UsuariosIdentity");
+    }
+
+    /// <summary>
+    /// Lista de usuarios de Identity
+    /// </summary>
+    public IActionResult UsuariosIdentity()
+    {
+        var viewModels = _crud.GetUsersWithRoles();
         return View(viewModels);
     }
 
@@ -825,6 +835,23 @@ public class AdminController : Controller
         {
             votos = votos.Where(v => v.EleccionId == eleccionId.Value).ToList();
         }
+
+        // Preparar datos para graficos
+        var votosPorHora = votos
+            .GroupBy(v => v.FechaVotoUtc.ToLocalTime().Hour)
+            .Select(g => new { Hora = g.Key, Cantidad = g.Count() })
+            .OrderBy(x => x.Hora)
+            .ToList();
+
+        var distribucion = votos
+            .GroupBy(v => v.Candidato?.Nombre ?? v.Lista?.Nombre ?? "N/A")
+            .Select(g => new { Candidato = g.Key, Cantidad = g.Count() })
+            .OrderByDescending(x => x.Cantidad)
+            .Take(10) // Top 10
+            .ToList();
+
+        ViewBag.DatosPorHora = votosPorHora;
+        ViewBag.DatosDistribucion = distribucion;
 
         ViewBag.Elecciones = elecciones;
         ViewBag.EleccionIdFilter = eleccionId;
@@ -1175,7 +1202,6 @@ public class AdminController : Controller
     // ==================== ASIGNACION DE USUARIOS (FASE 10) - DESACTIVADO TEMPORALMENTE ====================
     // Pendiente migración a Identity completo para manejo de elecciones privadas
 
-    /*
     [HttpGet]
     public async Task<IActionResult> AsignarUsuarios(int id)
     {
@@ -1188,25 +1214,31 @@ public class AdminController : Controller
             return RedirectToAction("Elecciones");
         }
 
-        // Obtener todos los usuarios "Usuario"
+        // Obtener usuarios del rol votante (Identity)
+        // Nota: Asegurarse de que el rol "Usuario" exista y tenga usuarios
         var users = await _userManager.GetUsersInRoleAsync("Usuario");
-        // var asignados = _crud.GetUsuariosAsignados(id).Select(x => x.UsuarioId).ToHashSet();
+        // Fallback si no hay rol o usuarios: traer todos
+        if (users == null || !users.Any())
+        {
+             users = _userManager.Users.ToList();
+        }
+
+        // Obtener asignaciones actuales desde DB
+        var asignados = _crud.GetUsuariosAsignados(id).Select(x => x.UsuarioId).ToHashSet();
 
         var model = new AsignarUsuariosViewModel
         {
             EleccionId = id,
             EleccionTitulo = eleccion.Titulo,
             CupoMaximo = eleccion.CupoMaximo,
-            // UsuariosAsignadosCount = asignados.Count,
-            UsuariosAsignadosCount = 0,
+            UsuariosAsignadosCount = asignados.Count,
             Usuarios = users.Select(u => new UsuarioAsignacionDto
             {
                 Id = u.Id,
                 Email = u.Email,
                 Nombre = u.UserName,
-                // Asignado = asignados.Contains(u.Id)
-                Asignado = false
-            }).ToList()
+                Asignado = asignados.Contains(u.Id)
+            }).OrderByDescending(u => u.Asignado).ThenBy(u => u.Email).ToList()
         };
 
         return View(model);
@@ -1219,13 +1251,12 @@ public class AdminController : Controller
         {
             if (asignar)
             {
-                // var success = _crud.AsignarUsuarioAEleccion(eleccionId, usuarioId);
-                // if (!success) return Json(new { success = false, message = "Error: Cupo lleno o usuario no encontrado." });
-                return Json(new { success = false, message = "Funcionalidad desactivada temporalmente." });
+                 var success = _crud.AsignarUsuarioAEleccion(eleccionId, usuarioId);
+                 if (!success) return Json(new { success = false, message = "Error: Cupo lleno o usuario no encontrado." });
             }
             else
             {
-                // _crud.RemoverUsuarioDeEleccion(eleccionId, usuarioId);
+                 _crud.RemoverUsuarioDeEleccion(eleccionId, usuarioId);
             }
             return Json(new { success = true });
         }
@@ -1234,7 +1265,6 @@ public class AdminController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
-    */
 
 }
 

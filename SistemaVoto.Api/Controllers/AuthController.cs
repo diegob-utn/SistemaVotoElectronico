@@ -23,6 +23,36 @@ namespace SistemaVoto.Api.Controllers
         }
 
         public record LoginRequest(string Email, string Password);
+        public record RegisterRequest(string Email, string Password, string NombreCompleto);
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+                return BadRequest(ApiResult<object>.Fail("Email y contraseña requeridos."));
+
+            // Verificar si existe
+            var existingUser = await _userManager.FindByEmailAsync(req.Email);
+            if (existingUser != null)
+                return BadRequest(ApiResult<object>.Fail("El usuario ya existe."));
+
+            var user = new IdentityUser { UserName = req.Email, Email = req.Email };
+            var result = await _userManager.CreateAsync(user, req.Password);
+
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(user, "Usuario");
+                
+                // Retornar objeto similar a login para uso inmediato si se requiere
+                return Ok(ApiResult<object>.Ok(new { 
+                    Id = user.Id, 
+                    Email = user.Email,
+                    Message = "Usuario creado exitosamente"
+                }));
+            }
+
+            return BadRequest(ApiResult<object>.Fail(string.Join(", ", result.Errors.Select(e => e.Description))));
+        }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)

@@ -56,6 +56,26 @@
         </div>
     </div>
 
+    <!-- Charts Row -->
+    <div class="charts-row" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Tendencia de Votos (Por Hora)</h3>
+            </div>
+            <div class="card-body">
+                 <div id="chartVotosHora"></div>
+            </div>
+        </div>
+        <div class="card">
+             <div class="card-header">
+                <h3 class="card-title">Distribución (Top 10)</h3>
+            </div>
+            <div class="card-body">
+                 <div id="chartDistribucion"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Info Alert -->
     <div class="alert alert-info">
         <i data-lucide="info" style="width: 20px; height: 20px;"></i>
@@ -187,6 +207,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
+            initCharts();
         });
         
         function filterByEleccion() {
@@ -196,6 +217,64 @@
             } else {
                 window.location.href = '/Admin/HistorialVotos';
             }
+        }
+
+        function initCharts() {
+            var datosHora = @Html.Raw(Json.Serialize(ViewBag.DatosPorHora));
+            var datosDist = @Html.Raw(Json.Serialize(ViewBag.DatosDistribucion));
+
+            // Chart Votos por Hora
+            var optionsHora = {
+                series: [{
+                    name: "Votos",
+                    data: datosHora.map(d => d.cantidad)
+                }],
+                chart: {
+                    type: 'area',
+                    height: 300,
+                    toolbar: { show: false },
+                    fontFamily: 'Inter, sans-serif'
+                },
+                xaxis: {
+                    categories: datosHora.map(d => d.hora + ":00"),
+                    labels: { style: { colors: 'var(--text-secondary)' } }
+                },
+                yaxis: {
+                    labels: { style: { colors: 'var(--text-secondary)' } }
+                },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 2 },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.3
+                    }
+                },
+                colors: ['var(--accent)'],
+                theme: { mode: document.documentElement.getAttribute('data-theme') || 'light' }
+            };
+            new ApexCharts(document.querySelector("#chartVotosHora"), optionsHora).render();
+
+            // Chart Distribucion
+            var optionsDist = {
+                series: datosDist.map(d => d.cantidad),
+                chart: {
+                    type: 'donut',
+                    height: 300,
+                    fontFamily: 'Inter, sans-serif'
+                },
+                labels: datosDist.map(d => d.candidato),
+                colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0', '#3F51B5', '#546E7A', '#D4526E'],
+                legend: {
+                    position: 'bottom',
+                    labels: { colors: 'var(--text-secondary)' }
+                },
+                dataLabels: { enabled: false },
+                theme: { mode: document.documentElement.getAttribute('data-theme') || 'light' }
+            };
+            new ApexCharts(document.querySelector("#chartDistribucion"), optionsDist).render();
         }
     </script>
 }

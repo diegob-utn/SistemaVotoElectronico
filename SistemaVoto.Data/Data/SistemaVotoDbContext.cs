@@ -21,6 +21,7 @@ namespace SistemaVoto.Data.Data
         public DbSet<Ubicacion> Ubicaciones => Set<Ubicacion>();
         public DbSet<RecintoElectoral> Recintos => Set<RecintoElectoral>();
         public DbSet<EleccionUbicacion> EleccionUbicaciones => Set<EleccionUbicacion>();
+        public DbSet<EleccionUsuario> EleccionUsuarios => Set<EleccionUsuario>();
 
         protected override void OnModelCreating(ModelBuilder mb)
         {
@@ -152,6 +153,9 @@ namespace SistemaVoto.Data.Data
 
             mb.Entity<Ubicacion>().HasIndex(u => new { u.ParentId, u.Tipo, u.Nombre });
             mb.Entity<RecintoElectoral>().HasIndex(r => new { r.UbicacionId, r.Nombre });
+
+            mb.Entity<EleccionUsuario>()
+                .HasKey(eu => new { eu.EleccionId, eu.UsuarioId });
         }
     }
 }

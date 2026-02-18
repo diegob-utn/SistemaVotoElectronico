@@ -36,6 +36,7 @@
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.5);
+  color: #0D1017;
 }
 
 .btn-primary:active {

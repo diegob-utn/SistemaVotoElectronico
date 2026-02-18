@@ -71,7 +71,7 @@
                         <i data-lucide="list" style="width: 16px; height: 16px;"></i>
                         Tipo de Eleccion
                     </label>
-                    <select asp-for="Tipo" class="form-control">
+                    <select asp-for="Tipo" class="form-control" id="selectTipo" onchange="toggleTipoEleccion()">
                         <option value="Nominal">Nominal - Voto por candidato individual</option>
                         <option value="Plancha">Plancha - Voto por lista/partido completo</option>
                         <option value="Mixta">Mixta - Candidatos de diferentes listas</option>
@@ -81,14 +81,36 @@
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="NumEscanos" class="form-label">
+                <div class="form-group">
+                    <label asp-for="NumEscanos" class="form-label" id="lblNumEscanos">
                         <i data-lucide="users" style="width: 16px; height: 16px;"></i>
                         Numero de Escanos
                     </label>
-                    <input asp-for="NumEscanos" class="form-control" type="number" min="1" max="100" />
+                    <input asp-for="NumEscanos" class="form-control" type="number" min="1" max="100" id="inputNumEscanos" oninput="validateSum()" />
                     <span asp-validation-for="NumEscanos" class="text-error"></span>
-                    <small class="text-muted">Solo aplica para Plancha y Mixta. En Nominal se ignora.</small>
+                    <small class="text-muted" id="helpNumEscanos">Solo aplica para Plancha y Mixta. En Nominal se ignora.</small>
                 </div>
+                </div>
+            </div>
+
+            <div class="form-row" id="divEscanosMixtos" style="display:none;">
+                <div class="form-group">
+                    <label asp-for="EscanosNominales" class="form-label">
+                        <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                        Escaños Nominales
+                    </label>
+                    <input asp-for="EscanosNominales" class="form-control" type="number" min="0" oninput="validateSum()" />
+                    <span asp-validation-for="EscanosNominales" class="text-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="EscanosLista" class="form-label">
+                        <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                        Escaños Lista
+                    </label>
+                    <input asp-for="EscanosLista" class="form-control" type="number" min="0" oninput="validateSum()" />
+                    <span asp-validation-for="EscanosLista" class="text-error"></span>
+                </div>
+                <small class="text-muted" style="grid-column: span 2;" id="sumValidationMsg">La suma debe ser igual al Número Total de Escaños.</small>
             </div>
 
             <div class="form-row">
@@ -248,10 +270,54 @@
             lucide.createIcons();
         }
 
+        function toggleTipoEleccion() {
+            var select = document.getElementById('selectTipo');
+            var div = document.getElementById('divEscanosMixtos');
+            var lblEscanos = document.getElementById('lblNumEscanos');
+            var helpEscanos = document.getElementById('helpNumEscanos');
+
+            if (select) {
+                if (div) {
+                    div.style.display = select.value === 'Mixta' ? 'grid' : 'none';
+                }
+                
+                if (lblEscanos && helpEscanos) {
+                    if (select.value === 'Nominal') {
+                         lblEscanos.innerHTML = '<i data-lucide="user" style="width: 16px; height: 16px;"></i> Cantidad de Ganadores (Puestos)';
+                         helpEscanos.innerText = 'Indique cuántos candidatos resultarán electos (ej: 1 para Presidente).';
+                    } else {
+                         lblEscanos.innerHTML = '<i data-lucide="users" style="width: 16px; height: 16px;"></i> Número de Escaños';
+                         helpEscanos.innerText = 'Total de curules a repartir entre las listas/partidos.';
+                    }
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function validateSum() {
+            var total = parseInt(document.getElementById('inputNumEscanos').value) || 0;
+            var nom = parseInt(document.getElementById('EscanosNominales').value) || 0;
+            var list = parseInt(document.getElementById('EscanosLista').value) || 0;
+            var msg = document.getElementById('sumValidationMsg');
+            
+            if (msg) {
+                if (nom + list === total) {
+                    msg.innerHTML = '<span class="text-success"><i data-lucide="check" style="width:14px;height:14px"></i> Suma correcta</span>';
+                    msg.className = "text-success";
+                } else {
+                    msg.innerHTML = '<span class="text-error"><i data-lucide="x" style="width:14px;height:14px"></i> La suma ('+ (nom+list) +') no coincide con el total ('+ total +')</span>';
+                    msg.className = "text-error";
+                }
+                lucide.createIcons();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
             toggleModoUbicacion();
             updateCupoLabel();
+            toggleTipoEleccion();
+            validateSum();
         });
     </script>
 }

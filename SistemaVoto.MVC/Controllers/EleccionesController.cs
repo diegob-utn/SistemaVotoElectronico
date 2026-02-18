@@ -22,18 +22,55 @@ public class EleccionesController : Controller
     /// </summary>
     public IActionResult Index()
     {
-        var elecciones = _crud.GetElecciones();
-        
-        // Filtrar si el usuario es un votante generado para una elección específica
-        if (User.Identity?.IsAuthenticated == true && User.IsInRole("Usuario"))
+        var todas = _crud.GetElecciones();
+        var elecciones = new List<Eleccion>();
+
+        // Lógica de Filtrado de Seguridad
+        if (User.IsInRole("Administrador"))
         {
-            var userName = User.Identity.Name;
-            // Patrón: votante_{EleccionId}_{Index}
-            var parts = userName?.Split('_');
-            if (parts?.Length >= 2 && parts[0] == "votante" && int.TryParse(parts[1], out int userEleccionId))
+            elecciones = todas;
+        }
+        else
+        {
+            // 1. Siempre mostrar públicas
+            elecciones.AddRange(todas.Where(e => e.Acceso == TipoAcceso.Publica));
+
+            if (User.Identity?.IsAuthenticated == true)
             {
-                elecciones = elecciones.Where(e => e.Id == userEleccionId).ToList();
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var userName = User.Identity.Name;
+
+                // 2. Mostrar Privadas Asignadas
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var assignedIds = _crud.GetAssignedElectionIds(userId);
+                    elecciones.AddRange(todas.Where(e => assignedIds.Contains(e.Id)));
+                }
+
+                // 3. Mostrar Generadas (si corresponde al usuario generado)
+                if (userName != null && userName.StartsWith("votante_"))
+                {
+                    var parts = userName.Split('_');
+                    if (parts.Length >= 2 && int.TryParse(parts[1], out int userEleccionId))
+                    {
+                        // Asegurar que se agrega aunque no sea pública ni asignada explícitamente (fallback)
+                        var eleccionGenerada = todas.FirstOrDefault(e => e.Id == userEleccionId);
+                        if (eleccionGenerada != null)
+                        {
+                            elecciones.Add(eleccionGenerada);
+                        }
+                        
+                        // Filtrar ESTRICTAMENTE a su elección asignada.
+                        elecciones = elecciones.Where(e => 
+                            (e.Acceso == TipoAcceso.Generada && e.Titulo.Contains(parts[1])) || // Safety check
+                            e.Id == userEleccionId
+                        ).ToList();
+                    }
+                }
             }
+            
+            // Eliminar duplicados y ordenar
+            elecciones = elecciones.DistinctBy(e => e.Id).OrderByDescending(e => e.FechaInicioUtc).ToList();
         }
 
         // Clasificar por estado

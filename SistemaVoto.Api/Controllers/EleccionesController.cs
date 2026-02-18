@@ -140,6 +140,46 @@ namespace SistemaVoto.Api.Controllers
             return Ok(ApiResult<object>.Ok(items));
         }
 
+        public record AssignUserRequest(string Email);
+
+        // POST /api/elecciones/{id}/usuarios
+        [HttpPost("{id:int}/usuarios")]
+        public async Task<ActionResult<ApiResult<object>>> AssignUser(int id, [FromBody] AssignUserRequest req)
+        {
+            var eleccion = await _db.Elecciones.FirstOrDefaultAsync(x => x.Id == id);
+            if (eleccion is null) return NotFound(ApiResult<object>.Fail("Elección no encontrada."));
+
+            // Buscar usuario por email (Identity)
+            // Nota: Aquí asumimos que AspNetUsers está en el mismo contexto o accesible.
+            // SistemaVotoDbContext hereda de IdentityDbContext, así que tiene Users.
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email);
+            if (user == null)
+                return NotFound(ApiResult<object>.Fail($"Usuario con email {req.Email} no encontrado."));
+
+            // Verificar si ya está asignado
+            var exists = await _db.EleccionUsuarios.AnyAsync(eu => eu.EleccionId == id && eu.UsuarioId == user.Id);
+            if (exists)
+                return Ok(ApiResult<object>.Ok(new { message = "Usuario ya estaba asignado." }));
+
+            // Verificar cupo
+             if (eleccion.CupoMaximo > 0)
+            {
+                var count = await _db.EleccionUsuarios.CountAsync(x => x.EleccionId == id);
+                if (count >= eleccion.CupoMaximo) 
+                    return BadRequest(ApiResult<object>.Fail("Cupo máximo de la elección alcanzado."));
+            }
+
+            _db.EleccionUsuarios.Add(new EleccionUsuario 
+            { 
+                EleccionId = id, 
+                UsuarioId = user.Id,
+                FechaAsignacion = DateTime.UtcNow
+            });
+
+            await _db.SaveChangesAsync();
+            return Ok(ApiResult<object>.Ok(new { message = "Usuario asignado exitosamente." }));
+        }
+
 
         /*
         // GET /api/elecciones/{id}/conteo?ubicacionId=1&recintoId=2

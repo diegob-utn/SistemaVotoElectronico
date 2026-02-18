@@ -1,0 +1,115 @@
+@using SistemaVoto.MVC.ViewModels
+@using SistemaVoto.Modelos
+@model CandidatoViewModel
+
+@{
+    ViewData["Title"] = "Editar Candidato";
+    var listas = ViewBag.Listas as List<Lista>;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h2>Editar Candidato</h2>
+                @if (!string.IsNullOrEmpty(Model.EleccionTitulo))
+                {
+                    <p class="text-muted">Elección: <strong>@Model.EleccionTitulo</strong></p>
+                }
+            </div>
+            <div class="card-body">
+                @if (Model.ErrorMessage != null)
+                {
+                    <div class="alert alert-error mb-4">
+                        <i data-lucide="alert-circle"></i> @Model.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="EditarCandidato" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="EleccionId" />
+                    <input type="hidden" asp-for="RequiereLista" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Nombre" class="form-label">Nombre Completo</label>
+                            <input asp-for="Nombre" class="form-control" placeholder="Nombre del candidato" />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                        
+                        @if (listas != null && listas.Any())
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ListaId" class="form-label font-bold">Partido / Lista (Opcional)</label>
+                                <select asp-for="ListaId" class="form-select" id="listaSelect">
+                                    <option value="">-- Independiente / Otro --</option>
+                                    @foreach (var lista in listas)
+                                    {
+                                        <option value="@lista.Id" selected="@(Model.ListaId == lista.Id)">@lista.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="ListaId" class="text-danger"></span>
+                                <small class="text-muted">Si selecciona lista, el partido se asignará automáticamente.</small>
+                            </div>
+                        }
+
+                        <div class="col-md-6 mb-3" id="partidoInputContainer">
+                            <label asp-for="PartidoPolitico" class="form-label">Partido / Movimiento</label>
+                            <input asp-for="PartidoPolitico" class="form-control" placeholder="Nombre del partido (si es independiente)" id="partidoInput" />
+                            <span asp-validation-for="PartidoPolitico" class="text-danger"></span>
+                        </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                var select = document.getElementById('listaSelect');
+                                var inputContainer = document.getElementById('partidoInputContainer');
+                                var input = document.getElementById('partidoInput');
+
+                                if (select) {
+                                    function toggleInput() {
+                                        if (select.value) {
+                                            inputContainer.style.display = 'none';
+                                            // Optional: Don't clear on edit to preserve if they switch back
+                                        } else {
+                                            inputContainer.style.display = 'block';
+                                        }
+                                    }
+                                    select.addEventListener('change', toggleInput);
+                                    toggleInput(); // Run on init
+                                }
+                            });
+                        </script>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="FotoUrl" class="form-label">Foto URL (Opcional)</label>
+                        <input asp-for="FotoUrl" class="form-control" placeholder="https://..." />
+                        <span asp-validation-for="FotoUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Propuestas" class="form-label">Propuestas (Breve descripción)</label>
+                        <textarea asp-for="Propuestas" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Propuestas" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <a asp-action="Candidatos" asp-route-eleccionId="@Model.EleccionId" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 18px; height: 18px; margin-right: 8px;"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        lucide.createIcons();
+    </script>
+}

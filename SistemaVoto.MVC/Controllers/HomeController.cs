@@ -15,6 +15,12 @@ namespace SistemaVoto.MVC.Controllers
 
         public IActionResult Index()
         {
+            if (User.IsInRole("Administrador"))
+                return RedirectToAction("Dashboard", "Admin");
+
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "Elecciones");
+
             return View();
         }
 

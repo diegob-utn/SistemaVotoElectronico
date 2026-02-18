@@ -4,6 +4,8 @@ using SistemaVoto.Modelos;
 
 namespace SistemaVoto.MVC.Services;
 
+using SistemaVoto.MVC.ViewModels;
+
 /// <summary>
 /// Servicio de CRUD local usando Entity Framework directamente
 /// Este servicio reemplaza las llamadas a la API externa para operaciones locales
@@ -330,7 +332,6 @@ public class LocalCrudService
     // Se desactivó para resolver conflicto de modelo con Usuario legacy. 
     // TODO: Migrar a Identity si se requiere esta funcionalidad.
 
-    /*
     /// <summary>
     /// Asigna un usuario a una elección privada. Retorna false si ya existe o cupo lleno.
     /// </summary>
@@ -376,7 +377,6 @@ public class LocalCrudService
         _context.SaveChanges();
         return true;
     }
-    */
 
     /// <summary>
     /// Verifica si un usuario tiene acceso a una elección (Pública o Asignado)
@@ -392,19 +392,55 @@ public class LocalCrudService
         // Si es generada, acceso total (validación se hace por login de usuario generado)
         if (eleccion.Acceso == TipoAcceso.Generada) return true;
 
-        // Si es privada, verificar tabla - DESACTIVADO
-        // return _context.EleccionUsuarios.Any(x => x.EleccionId == eleccionId && x.UsuarioId == usuarioId);
-        return false; // Por defecto denegar si es privada y no hay tabla
+        // Si es privada, verificar tabla
+        return _context.EleccionUsuarios.Any(x => x.EleccionId == eleccionId && x.UsuarioId == usuarioId);
     }
     
     /// <summary>
     /// Obtiene usuarios asignados
     /// </summary>
-    // public List<EleccionUsuario> GetUsuariosAsignados(int eleccionId)
-    // {
-    //    return _context.EleccionUsuarios
-    //        .Include(x => x.Usuario)
-    //        .Where(x => x.EleccionId == eleccionId)
-    //        .ToList();
-    // }
+    /// <summary>
+    /// Obtiene usuarios asignados
+    /// </summary>
+    public List<EleccionUsuario> GetUsuariosAsignados(int eleccionId)
+    {
+       return _context.EleccionUsuarios
+           .Include(x => x.Usuario)
+           .Where(x => x.EleccionId == eleccionId)
+           .ToList();
+    }
+
+    // ==================== OPTIMIZACION IDENTITY ====================
+
+    /// <summary>
+    /// Obtiene todos los usuarios con sus roles en una sola consulta (JOIN)
+    /// </summary>
+    public List<IdentityUserViewModel> GetUsersWithRoles()
+    {
+        // Nota: IdentityDbContext usa AspNetUsers, AspNetRoles, AspNetUserRoles
+        // UserRoles es DbSet<IdentityUserRole<string>>
+        
+        var query = from u in _context.Users
+                    select new IdentityUserViewModel
+                    {
+                        Id = u.Id,
+                        Email = u.Email ?? "",
+                        UserName = u.UserName,
+                        EmailConfirmed = u.EmailConfirmed,
+                        Roles = (from ur in _context.UserRoles
+                                 join r in _context.Roles on ur.RoleId equals r.Id
+                                 where ur.UserId == u.Id
+                                 select r.Name).ToList()
+                    };
+        
+        return query.ToList();
+    }
+
+    public List<int> GetAssignedElectionIds(string userId)
+    {
+        return _context.EleccionUsuarios
+            .Where(eu => eu.UsuarioId == userId)
+            .Select(eu => eu.EleccionId)
+            .ToList();
+    }
 }
