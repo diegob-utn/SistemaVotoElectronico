@@ -499,7 +499,7 @@
                 connection.onreconnected(function() {
                     console.log("SignalR: Reconectado.");
                     setSignalRStatus('connected');
-                    connection.invoke("JoinEleccion", parseInt(CURRENT_ELECCION_ID)).catch(err => console.error(err));
+                    connection.send("JoinEleccion", CURRENT_ELECCION_ID.toString()).catch(err => console.error(err));
                 });
 
                 connection.onclose(function() {
@@ -518,7 +518,7 @@
                     console.log("SignalR Conectado. ID: " + connection.connectionId);
                     setSignalRStatus('connected');
                     // Invoke with string to match Hub signature
-                    connection.invoke("JoinEleccion", parseInt(CURRENT_ELECCION_ID)).catch(err => console.error("Error uniéndose al grupo:", err));
+                    connection.send("JoinEleccion", CURRENT_ELECCION_ID.toString()).catch(err => console.error("Error uniéndose al grupo:", err));
                 }).catch(function (err) {
                     console.error("SignalR Connection Error: " + err);
                     setSignalRStatus('disconnected');
@@ -605,7 +605,7 @@
             if (connection && connection.state === "Connected") {
                 try {
                     console.log("Attempting to re-join group...");
-                    await connection.invoke("JoinEleccion", parseInt(CURRENT_ELECCION_ID));
+                    await connection.send("JoinEleccion", CURRENT_ELECCION_ID.toString());
                     console.log("JoinEleccion invoked successfully.");
                     alert("SignalR: Conectado y unido al grupo correctamente.");
                 } catch (e) {
