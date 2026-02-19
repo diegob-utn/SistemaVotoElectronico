@@ -285,5 +285,29 @@ namespace SistemaVoto.Api.Controllers
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
             return Convert.ToHexString(bytes).ToLowerInvariant();
         }
+
+        [HttpGet("historial/{usuarioId}")]
+        public async Task<ActionResult<ApiResult<HistorialVotoDto>>> GetHistorial(int eleccionId, string usuarioId)
+        {
+            var historial = await _db.HistorialVotaciones
+                .FirstOrDefaultAsync(h => h.EleccionId == eleccionId && h.UsuarioId == usuarioId);
+
+            if (historial == null)
+            {
+                return Ok(new ApiResult<HistorialVotoDto> { Success = true, Data = null });
+            }
+
+            return Ok(new ApiResult<HistorialVotoDto> 
+            { 
+                Success = true, 
+                Data = new HistorialVotoDto
+                {
+                    EleccionId = historial.EleccionId,
+                    UsuarioId = historial.UsuarioId,
+                    FechaParticipacionUtc = historial.FechaParticipacionUtc,
+                    HashTransaccion = historial.HashTransaccion
+                }
+            });
+        }
     }
 }

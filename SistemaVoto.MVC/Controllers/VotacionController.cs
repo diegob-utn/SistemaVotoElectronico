@@ -87,7 +87,7 @@ public class VotacionController : Controller
 
         var votoRequest = new
         {
-            usuarioId = int.Parse(userId),
+            usuarioId = userId, // Identity ID es string (Guid), no int
             candidatoId = candidatoId
         };
 
