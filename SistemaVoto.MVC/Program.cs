@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SistemaVoto.Data.Data;
@@ -94,6 +95,13 @@ namespace SistemaVoto.MVC
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
+
+            // --- FIX RENDER: Data Protection para contenedores Docker ---
+            // Sin esto, cada reinicio del contenedor genera claves nuevas
+            // y los anti-forgery tokens se invalidan
+            builder.Services.AddDataProtection()
+                .SetApplicationName("SistemaVotoMVC")
+                .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"));
 
             // --- FIX RENDER: Configurar ForwardedHeaders como servicio ---
             // Render usa un Load Balancer que termina SSL. La app recibe HTTP internamente.

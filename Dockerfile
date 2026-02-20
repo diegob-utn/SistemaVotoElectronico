@@ -29,8 +29,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
+# Crear directorio para Data Protection keys (anti-forgery tokens)
+RUN mkdir -p /app/keys
+
 # Render usa puerto 10000 por defecto
 ENV ASPNETCORE_URLS=http://+:10000
+ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "SistemaVoto.MVC.dll"]
