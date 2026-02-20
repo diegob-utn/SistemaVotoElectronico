@@ -100,16 +100,11 @@ namespace SistemaVoto.MVC
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
-            // --- FIX RENDER: Data Protection con clave fija en memoria ---
-            // PersistKeysToFileSystem no funciona en Render (ephemeral filesystem).
-            // Usamos una clave fija para que todas las cookies sean descifrables.
+            // --- FIX RENDER: Data Protection ---
+            // En Render free tier (una sola instancia), las claves en memoria
+            // son suficientes para la vida del proceso.
             builder.Services.AddDataProtection()
-                .SetApplicationName("SistemaVotoMVC")
-                .DisableAutomaticKeyGeneration()
-                .AddKeyManagementOptions(options =>
-                {
-                    options.XmlRepository = new StaticXmlRepository();
-                });
+                .SetApplicationName("SistemaVotoMVC");
 
             // --- FIX RENDER: Configurar ForwardedHeaders como servicio ---
             // Render usa un Load Balancer que termina SSL. La app recibe HTTP internamente.
@@ -128,14 +123,53 @@ namespace SistemaVoto.MVC
             // PRIMERO: ForwardedHeaders debe ir antes de cualquier otro middleware
             app.UseForwardedHeaders();
 
-            // --- DIAGNÓSTICO: Log del esquema detectado ---
+            // --- DIAGNÓSTICO: Log detallado para debugging ---
             app.Use(async (context, next) =>
             {
                 var scheme = context.Request.Scheme;
                 var host = context.Request.Host;
-                var forwardedProto = context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
-                Console.WriteLine($"[MVC-REQUEST] Scheme={scheme}, Host={host}, X-Forwarded-Proto={forwardedProto}, Path={context.Request.Path}");
+                var fwdProto = context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
+                var hasCookie = context.Request.Cookies.ContainsKey(".AspNetCore.Identity.Application");
+                var cookieCount = context.Request.Cookies.Count;
+                Console.WriteLine($"[MVC-REQ] {context.Request.Method} {context.Request.Path} | Scheme={scheme} | FwdProto={fwdProto} | IdentityCookie={hasCookie} | Cookies={cookieCount}");
+                
                 await next();
+
+                var isAuth = context.User?.Identity?.IsAuthenticated ?? false;
+                Console.WriteLine($"[MVC-RES] {context.Request.Path} | IsAuth={isAuth} | Status={context.Response.StatusCode}");
+            });
+
+            // --- Endpoint de diagnóstico temporal ---
+            app.MapGet("/diag", async (HttpContext ctx, IDataProtectionProvider dp) =>
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("=== DIAGNÓSTICO MVC ===");
+                sb.AppendLine($"Scheme: {ctx.Request.Scheme}");
+                sb.AppendLine($"Host: {ctx.Request.Host}");
+                sb.AppendLine($"X-Forwarded-Proto: {ctx.Request.Headers["X-Forwarded-Proto"]}");
+                sb.AppendLine($"IsAuthenticated: {ctx.User?.Identity?.IsAuthenticated}");
+                sb.AppendLine($"User: {ctx.User?.Identity?.Name}");
+                sb.AppendLine($"Cookie count: {ctx.Request.Cookies.Count}");
+                foreach (var c in ctx.Request.Cookies)
+                {
+                    sb.AppendLine($"  Cookie: {c.Key} = {c.Value.Substring(0, Math.Min(30, c.Value.Length))}...");
+                }
+                sb.AppendLine($"DataProtection type: {dp.GetType().FullName}");
+
+                // Test de Data Protection round-trip
+                try
+                {
+                    var protector = dp.CreateProtector("test");
+                    var encrypted = protector.Protect("hello");
+                    var decrypted = protector.Unprotect(encrypted);
+                    sb.AppendLine($"DataProtection test: OK (hello -> {encrypted.Substring(0, 20)}... -> {decrypted})");
+                }
+                catch (Exception ex)
+                {
+                    sb.AppendLine($"DataProtection test: FAILED - {ex.Message}");
+                }
+
+                return Results.Text(sb.ToString());
             });
 
             if (!app.Environment.IsDevelopment())

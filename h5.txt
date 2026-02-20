@@ -1,0 +1,16 @@
+HTTP/1.1 302 Found
+Date: Fri, 20 Feb 2026 16:42:38 GMT
+Content-Length: 0
+Connection: keep-alive
+CF-RAY: 9d0f754abc36c2e2-LIM
+Cache-Control: no-cache,no-store
+expires: Thu, 01 Jan 1970 00:00:00 GMT
+location: /Admin/Dashboard
+pragma: no-cache
+rndr-id: 6dba7d93-ed88-47e8
+Set-Cookie: .AspNetCore.Identity.Application=CfDJ8KCgoKCxscLC09Pk5OTk5ORYf66HrgvR9OOH-vFxlT3WYWQZtpuNtvITbBMVUxKsTiyxX3zMgtoIl2vYOINnyq9FNEYNw5awEjQVtVhMPjp6X0gmHvn36wRjYXe7egv5t1XYO6UVx1LFsJsAAGXlfk82JQAv59qP_Kr9qCcJRnk8KpJD24vac0VsyUUctpSeE3_Ax6w1VIDcNk7wcxptgdCTqhQ5OGxgJW-gn_2gFcev8DKBoQoNRjXkIKtqdf7CdqNoAxas0eA7Cht6M0FEV8EtBNUfTU5cK4Zm8gfnLsx1Gg3xp-tq_UjOzcnZA22CLXFtIG8l1sFty6VxD2X14t_tG1-BqDqFjdQP_-3kK5rXpbcUDk50mR171wFyFrO8LHQLeqZW7HvKZICrrm3urNDNCicCh5uX3MmtMCjftw_wmBF8QQqMguWBT6QNDaDxl-nW9Jl7WS7UDMx94JL7Vk_cngCaIDbJooADhzXmecFPoJWmbwLivBzTwVUUvVXhb82UcTycFuXAq-ZGm6m95dEpni7zFwuEe_QT7B0Z56MG5fKN0AG-Xh9qeW5IkpvQpo-5sEU2KCJknDYjcruOc5ayqZT5uaUaoXQgsDGhTbCkbSkpz6iwwKe-EZ3uyu85yBPCP1PpggBhNxAgJ9-cH-XPjz_Tt944n0VcYDdgAKBsMGZVuGDQ_-i-eOPXfRVEnePH3ujRtKPDKy_EdzE8nqD8jiL5FQrot4n__17Xy7rI0JVKEPyy0cMy8lrWLRA9Ml5H72UN3pZr6iprRk6d11pv4Zh8xuDwAUJL5BPHGvw3nJtS1h0Uz2aMOS83cOWHO6qU0uG8wK5Lqs6QuXz044ItAwWkVQYybNzkiylxz0pa; path=/; samesite=lax; httponly
+x-render-origin-server: Kestrel
+cf-cache-status: DYNAMIC
+Server: cloudflare
+alt-svc: h3=":443"; ma=86400
+
