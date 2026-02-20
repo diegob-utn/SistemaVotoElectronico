@@ -60,7 +60,7 @@
                 </a>
             </div>
         }
-        else if (Model.Eleccion.Estado == "Activa" && !User.Identity.IsAuthenticated)
+        else if (Model.Eleccion.Estado == "Activa" && (User.Identity?.IsAuthenticated != true))
         {
             <div class="alert alert-info mt-4">
                 <i data-lucide="info"></i>

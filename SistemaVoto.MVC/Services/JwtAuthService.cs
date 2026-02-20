@@ -165,7 +165,7 @@ public class LoginResponse
 /// </summary>
 public class UserInfo
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = null!;
     public string NombreCompleto { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string? Role { get; set; }

@@ -37,7 +37,10 @@ public class EleccionesController : Controller
 
             if (User.Identity?.IsAuthenticated == true)
             {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var userId = User.FindFirst("id")?.Value 
+                             ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                             ?? User.FindFirst("sub")?.Value;
+
                 var userName = User.Identity.Name;
 
                 // 2. Mostrar Privadas Asignadas
@@ -83,7 +86,10 @@ public class EleccionesController : Controller
         
         if (User.Identity?.IsAuthenticated == true)
         {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst("id")?.Value 
+                         ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst("sub")?.Value;
+
             if (!string.IsNullOrEmpty(userId))
             {
                 ViewBag.VotedElectionIds = _crud.GetVotedElectionIds(userId);
@@ -107,7 +113,10 @@ public class EleccionesController : Controller
         }
 
         // Verificar si ya ha votado para mostrar mensaje o bloquear boton
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.FindFirst("id")?.Value 
+                     ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+
         var yaVoto = !string.IsNullOrEmpty(userId) && _crud.HasVoted(id, userId);
         if (yaVoto)
         {
@@ -168,20 +177,42 @@ public class EleccionesController : Controller
             return RedirectToAction("Index");
         }
         
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        // Lógica de ID robusta
+        var userId = User.FindFirst("id")?.Value 
+                     ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+
+        // Debug Log
+        if (string.IsNullOrEmpty(userId)) 
+        {
+             Console.WriteLine("[MVC-ELECCIONES] User ID is null/empty in Votar");
+        }
+        else 
+        {
+             Console.WriteLine($"[MVC-ELECCIONES] Checking vote for User: {userId} Election: {id}");
+        }
         
-        // Verificar Control de Acceso (Fase 10)
         if (!string.IsNullOrEmpty(userId) && !_crud.UsuarioTieneAcceso(id, userId))
         {
              TempData["Error"] = "Usted no está autorizado para votar en esta elección (Requiere asignación).";
              return RedirectToAction("Index");
         }
 
+        // --- DEBUG EXTRA ---
+        Console.WriteLine($"[DEBUG-DUMP] Checking DB for Election {id}...");
+        var allVotes = _crud.GetVotesDebug(id);
+        Console.WriteLine($"[DEBUG-DUMP] Found {allVotes.Count} votes in DB.");
+        foreach(var v in allVotes)
+        {
+            Console.WriteLine($"[DEBUG-DB-ID] '{v}' vs Session '{userId}' Match? {v == userId}");
+        }
+
+
         // Verificar si ya ha votado
-        // var userId ya fue declarado arriba
         if (!string.IsNullOrEmpty(userId) && _crud.HasVoted(id, userId))
         {
-             TempData["Error"] = "Usted ya ha votado en esta elección.";
+             Console.WriteLine($"[MVC-ELECCIONES] VOTE FOUND for {userId}");
+             TempData["Warning"] = "Usted ya ha votado en esta elección."; // Changed to Warning for better UI feedback
              return RedirectToAction("Confirmacion", new { id = id });
         }
 

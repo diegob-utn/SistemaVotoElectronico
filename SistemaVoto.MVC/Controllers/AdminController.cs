@@ -1170,7 +1170,7 @@ public class AdminController : Controller
         {
             Id = model.Id,
             Nombre = model.Nombre,
-            PartidoPolitico = model.PartidoPolitico,
+            PartidoPolitico = model.PartidoPolitico ?? "",
             FotoUrl = model.FotoUrl,
             Propuestas = model.Propuestas,
             EleccionId = model.EleccionId,
@@ -1235,8 +1235,8 @@ public class AdminController : Controller
             Usuarios = users.Select(u => new UsuarioAsignacionDto
             {
                 Id = u.Id,
-                Email = u.Email,
-                Nombre = u.UserName,
+                Email = u.Email ?? "Sin Email",
+                Nombre = u.UserName ?? "Sin Nombre",
                 Asignado = asignados.Contains(u.Id)
             }).OrderByDescending(u => u.Asignado).ThenBy(u => u.Email).ToList()
         };

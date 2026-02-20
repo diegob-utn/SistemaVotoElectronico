@@ -30,6 +30,13 @@ namespace SistemaVoto.MVC
             var connectionString = builder.Configuration.GetConnectionString("DbContext.postgres-render")
                 ?? builder.Configuration.GetConnectionString("DefaultConnection");
             
+            // --- DEBUG CONN ---
+            if (!string.IsNullOrEmpty(connectionString)) {
+                var host = connectionString.Split(';').FirstOrDefault(s => s.Trim().StartsWith("Host=", StringComparison.OrdinalIgnoreCase)) ?? "Host=???";
+                Console.WriteLine($"[MVC-STARTUP] CONECTANDO A BD: {host}");
+            }
+            // ------------------
+
             builder.Services.AddDbContext<SistemaVotoDbContext>(options =>
                 options.UseNpgsql(connectionString));
 

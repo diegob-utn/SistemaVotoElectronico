@@ -302,30 +302,39 @@ public class LocalCrudService
     }
     
     // ==================== HISTORIAL VOTO ====================
+    // CORREGIDO: Usa HistorialVotaciones (tabla real de la API) en vez de HistorialVotos (tabla legacy vacía)
 
     public bool HasVoted(int eleccionId, string usuarioId)
     {
-        return _context.HistorialVotos.Any(h => h.EleccionId == eleccionId && h.UsuarioId == usuarioId);
+        return _context.HistorialVotaciones.Any(h => h.EleccionId == eleccionId && h.UsuarioId == usuarioId);
     }
 
     public void RegisterVotoHistorial(int eleccionId, string usuarioId)
     {
-        var historial = new HistorialVoto
+        var historial = new HistorialVotacion
         {
             EleccionId = eleccionId,
             UsuarioId = usuarioId,
-            FechaVotoUtc = DateTime.UtcNow
+            FechaParticipacionUtc = DateTime.UtcNow
         };
-        _context.HistorialVotos.Add(historial);
+        _context.HistorialVotaciones.Add(historial);
         _context.SaveChanges();
     }
 
     public HashSet<int> GetVotedElectionIds(string usuarioId)
     {
-        return _context.HistorialVotos
+        return _context.HistorialVotaciones
             .Where(h => h.UsuarioId == usuarioId)
             .Select(h => h.EleccionId)
             .ToHashSet();
+    }
+
+    public List<string> GetVotesDebug(int eleccionId)
+    {
+        return _context.HistorialVotaciones
+            .Where(h => h.EleccionId == eleccionId)
+            .Select(h => h.UsuarioId)
+            .ToList();
     }
 
     // ==================== ELECCION USUARIOS (FASE 10) - DESACTIVADO TEMPORALMENTE ====================

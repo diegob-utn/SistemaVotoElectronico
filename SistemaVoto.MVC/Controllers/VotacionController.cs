@@ -45,15 +45,29 @@ public class VotacionController : Controller
 
         // Verificar si ya voto
         var user = _authService.GetCurrentUser();
-        var userId = user?.FindFirst("id")?.Value;
+        var userId = user?.FindFirst("id")?.Value 
+                     ?? user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? user?.FindFirst("sub")?.Value;
         
         if (!string.IsNullOrEmpty(userId))
         {
+            Console.WriteLine($"[MVC-DEBUG] Consultando historial para User: {userId} Eleccion: {id}");
             var historialResult = await _api.GetAsync<HistorialVotoDto>($"api/elecciones/{id}/historial/{userId}");
+            
+            Console.WriteLine($"[MVC-DEBUG] Resultado API: Success={historialResult.Success}, DataNull={historialResult.Data == null}");
+            
             if (historialResult.Success && historialResult.Data != null)
             {
                 TempData["Warning"] = "Ya has votado en esta eleccion";
                 return RedirectToAction("YaVoto", new { id });
+            }
+        }
+        else
+        {
+            Console.WriteLine("[MVC-DEBUG] NO SE ENCONTRO USER ID EN CLAIMS. Claims disponibles:");
+            foreach(var c in user?.Claims ?? Enumerable.Empty<System.Security.Claims.Claim>())
+            {
+                Console.WriteLine($" - {c.Type}: {c.Value}");
             }
         }
 

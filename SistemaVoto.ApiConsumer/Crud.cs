@@ -21,6 +21,8 @@ namespace SistemaVoto.ApiConsumer
                     if (response.IsSuccessStatusCode)
                     {
                         json = response.Content.ReadAsStringAsync().Result;
+                        if (string.IsNullOrEmpty(json)) return ApiResult<T>.Fail("Respuesta vacía de API");
+
                         var newData = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResult<T>>(json);
                         return newData ?? ApiResult<T>.Fail("Error deserializando respuesta");
                     }
@@ -50,6 +52,8 @@ namespace SistemaVoto.ApiConsumer
 
                     // Parsear como JObject para inspeccionar estructura
                     var root = Newtonsoft.Json.Linq.JObject.Parse(json);
+                    if (root == null) return ApiResult<List<T>>.Fail("JSON inválido");
+
                     bool success = (bool?)root["success"] ?? false;
                     
                     if (!success)
@@ -69,18 +73,21 @@ namespace SistemaVoto.ApiConsumer
                     // Caso 1: Array directo (Lista simple)
                     if (dataToken is Newtonsoft.Json.Linq.JArray)
                     {
-                        list = dataToken.ToObject<List<T>>();
+                        var result = dataToken.ToObject<List<T>>();
+                        if (result != null) list = result;
                     }
                     // Caso 2: Objeto Paginado (tiene propiedad "items")
                     else if (dataToken is Newtonsoft.Json.Linq.JObject && dataToken["items"] is Newtonsoft.Json.Linq.JArray itemsArray)
                     {
-                        list = itemsArray.ToObject<List<T>>();
+                        var result = itemsArray.ToObject<List<T>>();
+                        if (result != null) list = result;
                     }
                     else
                     {
                         // Intentar deserializar como lista de todas formas por si acaso
                          try {
-                              list = Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(dataToken.ToString());
+                              var result = Newtonsoft.Json.JsonConvert.DeserializeObject<List<T>>(dataToken.ToString());
+                              if (result != null) list = result;
                          } catch {
                               return ApiResult<List<T>>.Fail("Formato de respuesta no reconocido (Ni lista ni paginado)");
                          }
@@ -106,6 +113,8 @@ namespace SistemaVoto.ApiConsumer
                 {
                     var response = httpClient.GetAsync($"{UrlBase}/{field}/{value}").Result;
                     var json = response.Content.ReadAsStringAsync().Result;
+                    if (string.IsNullOrEmpty(json)) return ApiResult<T>.Fail("Respuesta vacía");
+
                     var data = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResult<T>>(json);
                     return data ?? ApiResult<T>.Fail("Error deserializando respuesta");
                 }
@@ -127,6 +136,8 @@ namespace SistemaVoto.ApiConsumer
                 {
                     var response = httpClient.GetAsync($"{UrlBase}/{id}").Result;
                     var json = response.Content.ReadAsStringAsync().Result;
+                    if (string.IsNullOrEmpty(json)) return ApiResult<T>.Fail("Respuesta vacía");
+
                     var data = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResult<T>>(json);
                     return data ?? ApiResult<T>.Fail("Error deserializando respuesta");
                 }
