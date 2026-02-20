@@ -1,37 +1,48 @@
-﻿# Etapa de build
+﻿# Dockerfile Unificado para SistemaVoto (API y MVC)
+# Este archivo permite desplegar cualquiera de los dos proyectos.
+
+# 1. IMAGEN BASE DE SDK
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-COPY nuget.config ./
-
-# 1. COPIAR TODOS LOS .CSPROJ
-# Es vital copiar el de Data aquí, porque la API lo necesita para restaurar
+# 2. COPIAR TODOS LOS PROYECTOS (Restauración de Dependencias)
 COPY SistemaVoto.Modelos/SistemaVoto.Modelos.csproj SistemaVoto.Modelos/
 COPY SistemaVoto.Data/SistemaVoto.Data.csproj SistemaVoto.Data/
+COPY SistemaVoto.ApiConsumer/SistemaVoto.ApiConsumer.csproj SistemaVoto.ApiConsumer/
 COPY SistemaVoto.Api/SistemaVoto.Api.csproj SistemaVoto.Api/
+COPY SistemaVoto.MVC/SistemaVoto.MVC.csproj SistemaVoto.MVC/
 
-# 2. RESTAURAR
-# Al restaurar la Api, buscará los otros proyectos. Ahora sí los encontrará.
+# 3. RESTAURAR
+# Al restaurar MVC, también restaura sus dependencias (Modelos, ApiConsumer, etc.)
+RUN dotnet restore SistemaVoto.MVC/SistemaVoto.MVC.csproj
 RUN dotnet restore SistemaVoto.Api/SistemaVoto.Api.csproj
 
-# 3. COPIAR TODO EL CÓDIGO FUENTE
-# Aquí copiamos los archivos .cs reales de todas las capas
+# 4. COPIAR CÓDIGO FUENTE COMPLETO
 COPY SistemaVoto.Modelos/ SistemaVoto.Modelos/
 COPY SistemaVoto.Data/ SistemaVoto.Data/
+COPY SistemaVoto.ApiConsumer/ SistemaVoto.ApiConsumer/
 COPY SistemaVoto.Api/ SistemaVoto.Api/
+COPY SistemaVoto.MVC/ SistemaVoto.MVC/
 
-# 4. PUBLICAR
+# 5. PUBLICAR (Generamos ambas carpetas de salida)
 WORKDIR /src/SistemaVoto.Api
-RUN dotnet publish SistemaVoto.Api.csproj -c Release -o /app/publish
+RUN dotnet publish SistemaVoto.Api.csproj -c Release -o /app/publish/api
 
-# Etapa de runtime
+WORKDIR /src/SistemaVoto.MVC
+RUN dotnet publish SistemaVoto.MVC.csproj -c Release -o /app/publish/mvc /p:UseAppHost=false
+
+# 6. IMAGEN FINAL (RUNTIME)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
 
-# Render suele usar el puerto 10000 o dinámicos, pero internamente 
-# en el contenedor usaremos el 8080 para evitar problemas de permisos.
+# Puerto por defecto de Render
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "SistemaVoto.Api.dll"]
+# POR DEFECTO: Ejecuta MVC (que es lo que el usuario quiere ahora)
+# Si se quisiera ejecutar la API, se cambiaría el ENTRYPOINT en Render
+COPY --from=build /app/publish/mvc .
+# Copiamos también la API por si acaso se quisiera usar la misma imagen
+# COPY --from=build /app/publish/api ./api_bin 
+
+ENTRYPOINT ["dotnet", "SistemaVoto.MVC.dll"]

@@ -87,10 +87,19 @@ namespace SistemaVoto.MVC
             var app = builder.Build();
 
             // Configure the HTTP request pipeline
+            // --- FIX RENDER (HTTP 400 / Secure Cookies) ---
+            // Render usa un Load Balancer que termina SSL. La app recibe HTTP (puerto 10000/8080).
+            // Necesitamos decirle que confíe en los headers X-Forwarded-Proto para saber que viene de HTTPS.
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                                   Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+            });
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
+                // app.UseHsts(); // Opcional en Render si ellos fuerzan HTTPS
             }
 
             app.UseHttpsRedirection();
