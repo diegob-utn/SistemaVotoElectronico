@@ -99,7 +99,7 @@ public class AdminController : Controller
     /// Procesa la creacion de una nueva eleccion
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> CrearEleccion(EleccionViewModel model)
     {
         if (!ModelState.IsValid)
@@ -256,7 +256,7 @@ public class AdminController : Controller
     /// Procesa la actualizacion de una eleccion
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EditarEleccion(EleccionViewModel model)
     {
         if (!ModelState.IsValid)
@@ -338,7 +338,7 @@ public class AdminController : Controller
     /// Elimina una eleccion
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EliminarEleccion(int id)
     {
         try
@@ -358,7 +358,7 @@ public class AdminController : Controller
     /// Toggle de activacion/desactivacion de eleccion
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult ToggleActivarEleccion(int id)
     {
         var eleccion = _crud.GetEleccion(id);
@@ -429,7 +429,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult ActualizarGeografia(int eleccionId, List<int> ubicacionesSeleccionadas)
     {
         var asociacionesRes = Crud<EleccionUbicacion>.ReadAll();
@@ -487,7 +487,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult CrearUbicacion(UbicacionViewModel model)
     {
         if (!ModelState.IsValid)
@@ -544,7 +544,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EditarUbicacion(UbicacionViewModel model)
     {
         if (!ModelState.IsValid)
@@ -577,7 +577,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EliminarUbicacion(int id)
     {
         var result = Crud<Ubicacion>.Delete(id);
@@ -623,7 +623,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult CrearRecinto(RecintoViewModel model)
     {
         if (!ModelState.IsValid)
@@ -680,7 +680,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EditarRecinto(RecintoViewModel model)
     {
         if (!ModelState.IsValid)
@@ -713,7 +713,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EliminarRecinto(int id)
     {
         var result = Crud<RecintoElectoral>.Delete(id);
@@ -762,7 +762,7 @@ public class AdminController : Controller
     /// Procesa el registro de usuario
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> RegistrarUsuario(RegistroUsuarioViewModel model)
     {
         if (!ModelState.IsValid)
@@ -798,7 +798,7 @@ public class AdminController : Controller
     /// Elimina un usuario de Identity
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> EliminarUsuarioIdentity(string id)
     {
         var user = await _userManager.FindByIdAsync(id);
@@ -922,7 +922,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult CrearLista(ListaViewModel model)
     {
         if (!ModelState.IsValid)
@@ -973,7 +973,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EditarLista(ListaViewModel model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -997,7 +997,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EliminarLista(int id, int? eleccionId)
     {
         var res = Crud<Lista>.Delete(id);
@@ -1064,7 +1064,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult CrearCandidato(CandidatoViewModel model)
     {
         // Validacion personalizada: Requerir Lista segun Tipo de Eleccion
@@ -1161,7 +1161,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EditarCandidato(CandidatoViewModel model)
     {
         if (!ModelState.IsValid) return View(model);
@@ -1191,7 +1191,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult EliminarCandidato(int id, int eleccionId)
     {
         _crud.DeleteCandidato(id);

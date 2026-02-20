@@ -245,7 +245,7 @@ public class EleccionesController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public IActionResult Votar(VotarPostVM model)
     {
         if (!User.Identity?.IsAuthenticated ?? true)

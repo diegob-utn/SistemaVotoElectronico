@@ -87,7 +87,7 @@ public class VotacionController : Controller
     /// Procesar el voto
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Votar(int eleccionId, int candidatoId)
     {
         var user = _authService.GetCurrentUser();
