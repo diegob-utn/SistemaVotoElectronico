@@ -6,6 +6,7 @@ using SistemaVoto.Data.Data;
 using SistemaVoto.MVC.Services;
 using SistemaVoto.ApiConsumer;
 using SistemaVoto.Modelos;
+using SistemaVoto.MVC.Infrastructure;
 
 namespace SistemaVoto.MVC
 {
@@ -99,12 +100,16 @@ namespace SistemaVoto.MVC
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
-            // --- FIX RENDER: Data Protection para contenedores Docker ---
-            // Sin esto, cada reinicio del contenedor genera claves nuevas
-            // y los anti-forgery tokens se invalidan
+            // --- FIX RENDER: Data Protection con clave fija en memoria ---
+            // PersistKeysToFileSystem no funciona en Render (ephemeral filesystem).
+            // Usamos una clave fija para que todas las cookies sean descifrables.
             builder.Services.AddDataProtection()
                 .SetApplicationName("SistemaVotoMVC")
-                .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"));
+                .DisableAutomaticKeyGeneration()
+                .AddKeyManagementOptions(options =>
+                {
+                    options.XmlRepository = new StaticXmlRepository();
+                });
 
             // --- FIX RENDER: Configurar ForwardedHeaders como servicio ---
             // Render usa un Load Balancer que termina SSL. La app recibe HTTP internamente.
