@@ -1,28 +1,26 @@
-﻿# Dockerfile para SistemaVoto.MVC - Deploy independiente en Render
+# Dockerfile para SistemaVoto.Api - Deploy independiente en Render
 # Multi-stage build
 
 # Etapa 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copiar solo los .csproj necesarios para el MVC
+# Copiar solo los .csproj necesarios para la API
 COPY SistemaVoto.Modelos/SistemaVoto.Modelos.csproj SistemaVoto.Modelos/
 COPY SistemaVoto.Data/SistemaVoto.Data.csproj SistemaVoto.Data/
-COPY SistemaVoto.ApiConsumer/SistemaVoto.ApiConsumer.csproj SistemaVoto.ApiConsumer/
-COPY SistemaVoto.MVC/SistemaVoto.MVC.csproj SistemaVoto.MVC/
+COPY SistemaVoto.Api/SistemaVoto.Api.csproj SistemaVoto.Api/
 
 # Restaurar dependencias
-RUN dotnet restore SistemaVoto.MVC/SistemaVoto.MVC.csproj
+RUN dotnet restore SistemaVoto.Api/SistemaVoto.Api.csproj
 
 # Copiar código fuente necesario
 COPY SistemaVoto.Modelos/ SistemaVoto.Modelos/
 COPY SistemaVoto.Data/ SistemaVoto.Data/
-COPY SistemaVoto.ApiConsumer/ SistemaVoto.ApiConsumer/
-COPY SistemaVoto.MVC/ SistemaVoto.MVC/
+COPY SistemaVoto.Api/ SistemaVoto.Api/
 
 # Publicar
-WORKDIR /src/SistemaVoto.MVC
-RUN dotnet publish SistemaVoto.MVC.csproj -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR /src/SistemaVoto.Api
+RUN dotnet publish SistemaVoto.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Etapa 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
@@ -33,4 +31,4 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:10000
 EXPOSE 10000
 
-ENTRYPOINT ["dotnet", "SistemaVoto.MVC.dll"]
+ENTRYPOINT ["dotnet", "SistemaVoto.Api.dll"]

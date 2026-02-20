@@ -63,7 +63,12 @@ namespace SistemaVoto.Api
             builder.Services.AddCors(o =>
             {
                 o.AddPolicy("AllowDashboard", p =>
-                    p.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+                    p.SetIsOriginAllowed(origin =>
+                    {
+                        var host = new Uri(origin).Host;
+                        return host == "localhost"
+                            || host.EndsWith(".onrender.com");
+                    })
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials());
