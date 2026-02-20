@@ -84,17 +84,22 @@ namespace SistemaVoto.MVC
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
+            // --- FIX RENDER: Configurar ForwardedHeaders como servicio ---
+            // Render usa un Load Balancer que termina SSL. La app recibe HTTP internamente.
+            // Necesitamos confiar en los headers X-Forwarded-* del proxy de Render.
+            builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                                           Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+                // Limpiar restricciones para confiar en el proxy de Render (no es localhost)
+                options.KnownProxies.Clear();
+                options.KnownNetworks.Clear();
+            });
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline
-            // --- FIX RENDER (HTTP 400 / Secure Cookies) ---
-            // Render usa un Load Balancer que termina SSL. La app recibe HTTP (puerto 10000/8080).
-            // Necesitamos decirle que confíe en los headers X-Forwarded-Proto para saber que viene de HTTPS.
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
-                                   Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
-            });
+            // PRIMERO: ForwardedHeaders debe ir antes de cualquier otro middleware
+            app.UseForwardedHeaders();
 
             if (!app.Environment.IsDevelopment())
             {
