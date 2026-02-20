@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using SistemaVoto.Data.Data;
 using SistemaVoto.MVC.Services;
@@ -53,7 +54,7 @@ namespace SistemaVoto.MVC
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<SistemaVotoDbContext>();
 
-            // Configurar cookies de Identity
+            // Configurar cookies de Identity (compatible con reverse proxy HTTP)
             builder.Services.ConfigureApplicationCookie(options =>
             {
                 options.LoginPath = "/Auth/Login";
@@ -61,6 +62,16 @@ namespace SistemaVoto.MVC
                 options.AccessDeniedPath = "/Auth/AccessDenied";
                 options.ExpireTimeSpan = TimeSpan.FromHours(4);
                 options.SlidingExpiration = true;
+                // FIX RENDER: No forzar Secure en cookies (el proxy maneja HTTPS)
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+            });
+
+            // Configurar anti-forgery token (compatible con reverse proxy HTTP)
+            builder.Services.AddAntiforgery(options =>
+            {
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SameSite = SameSiteMode.Lax;
             });
 
             // Registrar HttpContextAccessor
@@ -101,6 +112,16 @@ namespace SistemaVoto.MVC
             // PRIMERO: ForwardedHeaders debe ir antes de cualquier otro middleware
             app.UseForwardedHeaders();
 
+            // --- DIAGNÓSTICO: Log del esquema detectado ---
+            app.Use(async (context, next) =>
+            {
+                var scheme = context.Request.Scheme;
+                var host = context.Request.Host;
+                var forwardedProto = context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
+                Console.WriteLine($"[MVC-REQUEST] Scheme={scheme}, Host={host}, X-Forwarded-Proto={forwardedProto}, Path={context.Request.Path}");
+                await next();
+            });
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -125,13 +146,22 @@ namespace SistemaVoto.MVC
                 pattern: "{controller=Home}/{action=Index}/{id?}");
             app.MapRazorPages();
 
-            // Seed de roles al iniciar
-            using (var scope = app.Services.CreateScope())
+            // Seed de roles al iniciar (con try-catch para no crashear si la BD falla)
+            try
             {
-                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-                
-                SeedRolesAndAdminAsync(roleManager, userManager).GetAwaiter().GetResult();
+                using (var scope = app.Services.CreateScope())
+                {
+                    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+                    
+                    SeedRolesAndAdminAsync(roleManager, userManager).GetAwaiter().GetResult();
+                    Console.WriteLine("[MVC-STARTUP] Seed de roles completado exitosamente.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MVC-STARTUP] ERROR en seed de roles: {ex.Message}");
+                // No crashear la app, seguir adelante
             }
 
             app.Run();
