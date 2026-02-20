@@ -63,15 +63,18 @@ namespace SistemaVoto.MVC
                 options.AccessDeniedPath = "/Auth/AccessDenied";
                 options.ExpireTimeSpan = TimeSpan.FromHours(4);
                 options.SlidingExpiration = true;
-                // FIX RENDER: No forzar Secure en cookies (el proxy maneja HTTPS)
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                // FIX RENDER: Forzar None porque ForwardedHeaders hace que el request
+                // se vea como HTTPS (por X-Forwarded-Proto), lo cual marca las cookies
+                // como Secure. Pero el navegador las envía por HTTPS de Render, así que
+                // en realidad SÍ son seguras — solo que el servidor interno ve HTTP.
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
                 options.Cookie.SameSite = SameSiteMode.Lax;
             });
 
             // Configurar anti-forgery token (compatible con reverse proxy HTTP)
             builder.Services.AddAntiforgery(options =>
             {
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
                 options.Cookie.SameSite = SameSiteMode.Lax;
             });
 
