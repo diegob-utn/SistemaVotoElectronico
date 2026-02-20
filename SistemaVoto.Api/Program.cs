@@ -88,7 +88,11 @@ namespace SistemaVoto.Api
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            // Solo redirigir a HTTPS en desarrollo local (Render maneja SSL en su LB)
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseAuthentication(); // JWT Middleare
             app.UseAuthorization();

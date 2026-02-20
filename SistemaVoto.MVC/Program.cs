@@ -99,10 +99,14 @@ namespace SistemaVoto.MVC
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // app.UseHsts(); // Opcional en Render si ellos fuerzan HTTPS
+                // No usar HSTS ni HTTPS Redirection en Render
+                // Render maneja SSL en su load balancer, la app recibe HTTP internamente
             }
-
-            app.UseHttpsRedirection();
+            else
+            {
+                // Solo redirigir a HTTPS en desarrollo local
+                app.UseHttpsRedirection();
+            }
             app.UseStaticFiles();
 
             app.UseRouting();
