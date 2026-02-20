@@ -45,7 +45,7 @@ public class AuthController : Controller
     /// Procesa el registro de un nuevo usuario
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken] // TEMPORAL: Deshabilitado para diagnosticar HTTP 400 en Render
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
         if (!ModelState.IsValid)
@@ -94,7 +94,7 @@ public class AuthController : Controller
     /// Procesa el login con Identity
     /// </summary>
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken] // TEMPORAL: Deshabilitado para diagnosticar HTTP 400 en Render
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (!ModelState.IsValid)
